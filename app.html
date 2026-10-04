@@ -1,3 +1,384 @@
-<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Location Tracker</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><main class="app"><header class="top"><h1>Location Tracker</h1><button id="out" class="small">Log out</button></header><div id="map"></div><section class="panel"><div id="st" class="status">Not sharing</div><div class="actions"><button id="start" class="btn">Start sharing</button><button id="stop" class="btn danger">Stop sharing</button></div></section></main><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script type="module">
-import{createClient}from"https://esm.sh/@supabase/supabase-js@2";const s=createClient("https://qiwfbgswukaixyhlzekw.supabase.co","sb_publishable_bAIMCv0YQnAsWv_ppNzWhQ_uSRRFyTC"),t=localStorage.getItem("lt_token"),name=localStorage.getItem("lt_user")||"you";if(!t)location="login.html";const map=L.map("map").setView([39,-104.8],5);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(map);let mark=null,watch=null,last=0;async function valid(){let{data,error}=await s.rpc("current_account",{p_token:t});if(error||!data){localStorage.clear();location="login.html";return false}return true}async function send(x){if(Date.now()-last<10000)return;last=Date.now();let a=x.coords;let{error}=await s.rpc("save_my_location",{p_token:t,p_lat:a.latitude,p_lng:a.longitude,p_accuracy:a.accuracy});if(error){st.textContent="Could not update location.";return}if(!mark)mark=L.marker([a.latitude,a.longitude]).addTo(map).bindPopup(name);else mark.setLatLng([a.latitude,a.longitude]);map.setView([a.latitude,a.longitude],16);st.textContent="Sharing • accuracy ±"+Math.round(a.accuracy)+" m"}start.onclick=()=>{if(!navigator.geolocation){st.textContent="Location unavailable.";return}if(watch===null)watch=navigator.geolocation.watchPosition(send,e=>st.textContent="Location error: "+e.message,{enableHighAccuracy:true,maximumAge:5000,timeout:15000})};stop.onclick=async()=>{if(watch!==null){navigator.geolocation.clearWatch(watch);watch=null}await s.rpc("stop_my_location",{p_token:t});if(mark){map.removeLayer(mark);mark=null}st.textContent="Not sharing"};out.onclick=async()=>{if(watch!==null)navigator.geolocation.clearWatch(watch);await s.rpc("logout_account",{p_token:t});localStorage.clear();location="login.html"};if(await valid()){let{data}=await s.rpc("my_location_status",{p_token:t});if(data?.sharing)st.textContent="You are sharing your location."}if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js");
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <title>Location Tracker</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+<main class="app">
+  <header class="top">
+    <div>
+      <h1>Location Tracker</h1>
+      <div id="account" class="top-subtitle"></div>
+    </div>
+    <button id="out" class="small">Log out</button>
+  </header>
+
+  <div id="map"></div>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <div id="st" class="status">Not sharing</div>
+        <div id="last-update" class="muted"></div>
+      </div>
+      <button id="add-friend" class="secondary">＋ Add friend</button>
+    </div>
+
+    <div class="actions">
+      <button id="start" class="btn">Start sharing</button>
+      <button id="stop" class="btn danger">Stop sharing</button>
+    </div>
+
+    <div class="friends-head">
+      <h2>Friends</h2>
+      <span id="friend-count" class="muted"></span>
+    </div>
+    <div id="friends" class="friends-list">
+      <div class="empty">Add a friend by username to see their location here.</div>
+    </div>
+  </section>
+</main>
+
+<div id="friend-dialog" class="dialog hidden" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+  <div class="dialog-card">
+    <div class="dialog-head">
+      <h2 id="dialog-title">Add a friend</h2>
+      <button id="close-dialog" class="icon-btn" aria-label="Close">×</button>
+    </div>
+    <p class="muted">Enter their exact Location Tracker username.</p>
+    <form id="friend-form">
+      <div class="field">
+        <label for="friend-username">Username</label>
+        <input id="friend-username" autocomplete="off" autocapitalize="none" maxlength="32" pattern="[A-Za-z0-9_]+" required>
+      </div>
+      <button class="btn">Add friend</button>
+      <div id="friend-message"></div>
+    </form>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL = "https://qiwfbgswukaixyhlzekw.supabase.co";
+const SUPABASE_KEY = "sb_publishable_bAIMCv0YQnAsWv_ppNzWhQ_uSRRFyTC";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const token = localStorage.getItem("lt_token");
+const username = localStorage.getItem("lt_user") || "you";
+if (!token) location.replace("login.html");
+
+const $ = id => document.getElementById(id);
+const map = L.map("map").setView([39, -104.8], 5);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: "© OpenStreetMap contributors"
+}).addTo(map);
+
+$("account").textContent = "Signed in as " + username;
+
+let myMarker = null;
+let friendMarkers = new Map();
+let watch = null;
+let lastSend = 0;
+let refreshTimer = null;
+
+function popupElement(title, detail) {
+  const wrap = document.createElement("div");
+  const strong = document.createElement("strong");
+  strong.textContent = title;
+  wrap.appendChild(strong);
+  if (detail) {
+    const small = document.createElement("div");
+    small.className = "popup-detail";
+    small.textContent = detail;
+    wrap.appendChild(small);
+  }
+  return wrap;
+}
+
+function setMessage(el, message, type = "") {
+  el.className = type ? type : "";
+  el.textContent = message;
+}
+
+function formatUpdated(value) {
+  if (!value) return "No location update yet";
+  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
+  if (seconds < 10) return "Updated just now";
+  if (seconds < 60) return "Updated " + seconds + "s ago";
+  const minutes = Math.floor(seconds / 60);
+  return "Updated " + minutes + "m ago";
+}
+
+async function checkSession() {
+  const { data, error } = await supabase.rpc("current_account", { p_token: token });
+  if (error || !data) {
+    localStorage.clear();
+    location.replace("login.html");
+    return false;
+  }
+  return true;
+}
+
+async function sendLocation(position) {
+  if (Date.now() - lastSend < 10000) return;
+  lastSend = Date.now();
+
+  const c = position.coords;
+  const { error } = await supabase.rpc("save_my_location", {
+    p_token: token,
+    p_lat: c.latitude,
+    p_lng: c.longitude,
+    p_accuracy: c.accuracy
+  });
+
+  if (error) {
+    $("st").textContent = "Could not update location.";
+    $("last-update").textContent = error.message;
+    return;
+  }
+
+  if (!myMarker) {
+    myMarker = L.marker([c.latitude, c.longitude]).addTo(map);
+  }
+  myMarker.setLatLng([c.latitude, c.longitude]);
+  myMarker.bindPopup(popupElement(username, "Your location"));
+  map.setView([c.latitude, c.longitude], 16);
+  $("st").textContent = "Sharing • accuracy ±" + Math.round(c.accuracy || 0) + " m";
+  $("last-update").textContent = "Your location is being shared";
+}
+
+function startSharing() {
+  if (!navigator.geolocation) {
+    $("st").textContent = "Location is unavailable on this device.";
+    return;
+  }
+  if (watch !== null) return;
+
+  $("st").textContent = "Starting location sharing…";
+  watch = navigator.geolocation.watchPosition(
+    sendLocation,
+    error => {
+      $("st").textContent = "Location error: " + error.message;
+    },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+  );
+}
+
+async function stopSharing() {
+  if (watch !== null) {
+    navigator.geolocation.clearWatch(watch);
+    watch = null;
+  }
+
+  const { error } = await supabase.rpc("stop_my_location", { p_token: token });
+  if (error) {
+    $("st").textContent = "Could not stop sharing.";
+    $("last-update").textContent = error.message;
+    return;
+  }
+
+  if (myMarker) {
+    map.removeLayer(myMarker);
+    myMarker = null;
+  }
+  $("st").textContent = "Not sharing";
+  $("last-update").textContent = "Your location is hidden from friends";
+}
+
+function clearFriendMarkers() {
+  for (const marker of friendMarkers.values()) map.removeLayer(marker);
+  friendMarkers.clear();
+}
+
+async function refreshFriends() {
+  const { data, error } = await supabase.rpc("list_friends", { p_token: token });
+  if (error) {
+    $("friends").innerHTML = "";
+    const err = document.createElement("div");
+    err.className = "error";
+    err.textContent = error.message;
+    $("friends").appendChild(err);
+    return;
+  }
+
+  const friends = Array.isArray(data) ? data : [];
+  $("friend-count").textContent = friends.length ? friends.length + " friend" + (friends.length === 1 ? "" : "s") : "";
+
+  const oldIds = new Set(friendMarkers.keys());
+  const activeIds = new Set(friends.filter(f => f.sharing && f.latitude != null && f.longitude != null).map(f => f.id));
+
+  for (const id of oldIds) {
+    if (!activeIds.has(id)) {
+      map.removeLayer(friendMarkers.get(id));
+      friendMarkers.delete(id);
+    }
+  }
+
+  for (const friend of friends) {
+    if (friend.sharing && friend.latitude != null && friend.longitude != null) {
+      let marker = friendMarkers.get(friend.id);
+      if (!marker) {
+        marker = L.marker([friend.latitude, friend.longitude]).addTo(map);
+        friendMarkers.set(friend.id, marker);
+      } else {
+        marker.setLatLng([friend.latitude, friend.longitude]);
+      }
+      marker.bindPopup(popupElement(friend.username, formatUpdated(friend.updated_at)));
+    }
+  }
+
+  const list = $("friends");
+  list.innerHTML = "";
+
+  if (!friends.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "No friends yet. Add someone by username.";
+    list.appendChild(empty);
+    return;
+  }
+
+  for (const friend of friends) {
+    const row = document.createElement("div");
+    row.className = "friend-row";
+
+    const info = document.createElement("div");
+    info.className = "friend-info";
+
+    const name = document.createElement("div");
+    name.className = "friend-name";
+    name.textContent = friend.username;
+
+    const status = document.createElement("div");
+    status.className = "friend-status " + (friend.sharing ? "online" : "offline");
+    status.textContent = friend.sharing
+      ? "● Sharing location • " + formatUpdated(friend.updated_at)
+      : "● Not sharing";
+
+    info.append(name, status);
+
+    const buttons = document.createElement("div");
+    buttons.className = "friend-actions";
+
+    const center = document.createElement("button");
+    center.className = "small secondary";
+    center.textContent = friend.sharing ? "View" : "Info";
+    center.disabled = !friend.sharing;
+    center.onclick = () => {
+      const marker = friendMarkers.get(friend.id);
+      if (marker) {
+        map.setView(marker.getLatLng(), 16);
+        marker.openPopup();
+      }
+    };
+
+    const remove = document.createElement("button");
+    remove.className = "small danger-outline";
+    remove.textContent = "Remove";
+    remove.onclick = () => removeFriend(friend.id, friend.username);
+
+    buttons.append(center, remove);
+    row.append(info, buttons);
+    list.appendChild(row);
+  }
+}
+
+async function removeFriend(friendId, friendUsername) {
+  if (!confirm("Remove " + friendUsername + " from your friends?")) return;
+
+  const { error } = await supabase.rpc("remove_friend", {
+    p_token: token,
+    p_friend_id: friendId
+  });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  const marker = friendMarkers.get(friendId);
+  if (marker) map.removeLayer(marker);
+  friendMarkers.delete(friendId);
+  await refreshFriends();
+}
+
+$("add-friend").onclick = () => {
+  $("friend-dialog").classList.remove("hidden");
+  $("friend-message").textContent = "";
+  $("friend-username").value = "";
+  setTimeout(() => $("friend-username").focus(), 50);
+};
+
+function closeDialog() {
+  $("friend-dialog").classList.add("hidden");
+}
+
+$("close-dialog").onclick = closeDialog;
+$("friend-dialog").onclick = e => {
+  if (e.target === $("friend-dialog")) closeDialog();
+};
+
+$("friend-form").onsubmit = async e => {
+  e.preventDefault();
+  const friendUsername = $("friend-username").value.trim();
+  setMessage($("friend-message"), "Adding friend…");
+
+  const { error } = await supabase.rpc("add_friend", {
+    p_token: token,
+    p_friend_username: friendUsername
+  });
+
+  if (error) {
+    setMessage($("friend-message"), error.message, "error");
+    return;
+  }
+
+  setMessage($("friend-message"), "Friend added!", "success");
+  await refreshFriends();
+  setTimeout(closeDialog, 500);
+};
+
+$("start").onclick = startSharing;
+$("stop").onclick = stopSharing;
+
+$("out").onclick = async () => {
+  if (watch !== null) navigator.geolocation.clearWatch(watch);
+  await supabase.rpc("logout_account", { p_token: token });
+  localStorage.clear();
+  location.replace("login.html");
+};
+
+async function init() {
+  if (!(await checkSession())) return;
+
+  const { data } = await supabase.rpc("my_location_status", { p_token: token });
+  if (data?.sharing) {
+    $("st").textContent = "You are sharing your location";
+    $("last-update").textContent = "Press Start sharing to resume live updates";
+  }
+
+  await refreshFriends();
+  refreshTimer = setInterval(refreshFriends, 10000);
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+}
+
+window.addEventListener("beforeunload", () => {
+  if (watch !== null) navigator.geolocation.clearWatch(watch);
+  if (refreshTimer) clearInterval(refreshTimer);
+});
+
+init();
 </script>
+</body>
+</html>
