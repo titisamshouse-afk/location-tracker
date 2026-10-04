@@ -69,3 +69,5 @@ h1{margin:0 0 8px}
   .find-tools .btn{width:100%}
   .find-head{align-items:flex-start}
 }
+
+.consent-box{margin:14px 0;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;line-height:1.45}.consent-box h2{font-size:17px;margin:0 0 7px}.consent-box p{margin:7px 0}.consent-box ul{margin:8px 0;padding-left:20px}.consent-check{display:flex;gap:9px;align-items:flex-start;margin:14px 0;font-size:14px;line-height:1.4}.consent-check input{margin-top:3px;flex:0 0 auto}
