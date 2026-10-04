@@ -20,6 +20,37 @@
 
   <div id="map"></div>
 
+  <section class="panel find-panel">
+    <div class="find-head">
+      <div>
+        <h2>🔎 Find</h2>
+        <div class="muted">Quickly locate yourself or a friend.</div>
+      </div>
+      <button id="find-me" class="secondary">Find me</button>
+    </div>
+    <div class="find-tools">
+      <label class="find-label" for="find-friend">Friend</label>
+      <select id="find-friend">
+        <option value="">Select a friend…</option>
+      </select>
+      <button id="find-friend-btn" class="btn">Find friend</button>
+    </div>
+    <div id="find-message" class="muted"></div>
+  </section>
+
+  <section class="panel headphones-panel">
+    <div class="find-head">
+      <div>
+        <h2>🎧 Headphones</h2>
+        <div id="headphone-status" class="muted">Checking browser support…</div>
+      </div>
+      <button id="headphone-find" class="secondary">Find headphones</button>
+    </div>
+    <button id="headphone-test" class="btn secondary full-btn">🔊 Play test sound</button>
+    <div class="muted headphone-note">On iPad/iPhone, Safari cannot directly scan for or locate Bluetooth headphones. This section can test audio and use Bluetooth device selection only on browsers that support Web Bluetooth.</div>
+    <div id="headphone-message"></div>
+  </section>
+
   <section class="panel">
     <div class="panel-head">
       <div>
@@ -88,6 +119,7 @@ let friendMarkers = new Map();
 let watch = null;
 let lastSend = 0;
 let refreshTimer = null;
+let audioContext = null;
 
 function popupElement(title, detail) {
   const wrap = document.createElement("div");
@@ -193,6 +225,102 @@ async function stopSharing() {
   $("last-update").textContent = "Your location is hidden from friends";
 }
 
+function updateFindFriendOptions(friends) {
+  const select = $("find-friend");
+  const current = select.value;
+  select.innerHTML = "";
+  const first = document.createElement("option");
+  first.value = "";
+  first.textContent = "Select a friend…";
+  select.appendChild(first);
+  for (const friend of friends) {
+    const option = document.createElement("option");
+    option.value = friend.id;
+    option.textContent = friend.username + (friend.sharing ? " • sharing" : " • not sharing");
+    select.appendChild(option);
+  }
+  if (friends.some(f => String(f.id) === current)) select.value = current;
+}
+
+function findMe() {
+  if (!navigator.geolocation) {
+    setMessage($("find-message"), "Location is unavailable on this device.", "error");
+    return;
+  }
+  setMessage($("find-message"), "Finding your location…");
+  navigator.geolocation.getCurrentPosition(
+    position => {
+      const c = position.coords;
+      if (!myMarker) myMarker = L.marker([c.latitude, c.longitude]).addTo(map);
+      myMarker.setLatLng([c.latitude, c.longitude]);
+      myMarker.bindPopup(popupElement(username, "Your current location")).openPopup();
+      map.setView([c.latitude, c.longitude], 17);
+      setMessage($("find-message"), "Found you. Accuracy ±" + Math.round(c.accuracy || 0) + " m.", "success");
+    },
+    error => setMessage($("find-message"), "Could not find you: " + error.message, "error"),
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+  );
+}
+
+function findFriend() {
+  const id = $("find-friend").value;
+  if (!id) {
+    setMessage($("find-message"), "Choose a friend first.", "error");
+    return;
+  }
+  const marker = friendMarkers.get(id);
+  if (!marker) {
+    setMessage($("find-message"), "That friend is not currently sharing a location.", "error");
+    return;
+  }
+  map.setView(marker.getLatLng(), 17);
+  marker.openPopup();
+  setMessage($("find-message"), "Showing your friend's latest location.", "success");
+}
+
+function setupHeadphones() {
+  const status = $("headphone-status");
+  if ("bluetooth" in navigator && typeof navigator.bluetooth?.requestDevice === "function") {
+    status.textContent = "Bluetooth device selection is available in this browser.";
+  } else {
+    status.textContent = "Bluetooth headphone scanning is not supported by this browser.";
+  }
+}
+
+async function findHeadphones() {
+  const message = $("headphone-message");
+  if (!("bluetooth" in navigator) || typeof navigator.bluetooth?.requestDevice !== "function") {
+    setMessage(message, "iPad Safari cannot scan for Bluetooth headphones from a webpage. Use Settings → Bluetooth to find or connect them.", "error");
+    return;
+  }
+  try {
+    setMessage(message, "Choose your headphones from the Bluetooth device picker…");
+    const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
+    setMessage(message, "Selected: " + (device.name || "Bluetooth device") + ". Browser support does not provide a distance or lost-headphones map.", "success");
+  } catch (error) {
+    setMessage(message, error.name === "NotFoundError" ? "No Bluetooth device was selected." : "Bluetooth selection failed: " + error.message, "error");
+  }
+}
+
+async function playHeadphoneTest() {
+  const message = $("headphone-message");
+  try {
+    audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioContext.state === "suspended") await audioContext.resume();
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.frequency.value = 880;
+    gain.gain.value = 0.08;
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.7);
+    setMessage(message, "Test sound played. Check your headphones.", "success");
+  } catch {
+    setMessage(message, "Could not play the test sound on this device.", "error");
+  }
+}
+
 function clearFriendMarkers() {
   for (const marker of friendMarkers.values()) map.removeLayer(marker);
   friendMarkers.clear();
@@ -210,6 +338,7 @@ async function refreshFriends() {
   }
 
   const friends = Array.isArray(data) ? data : [];
+  updateFindFriendOptions(friends);
   $("friend-count").textContent = friends.length ? friends.length + " friend" + (friends.length === 1 ? "" : "s") : "";
 
   const oldIds = new Set(friendMarkers.keys());
@@ -345,6 +474,12 @@ $("friend-form").onsubmit = async e => {
   await refreshFriends();
   setTimeout(closeDialog, 500);
 };
+
+$("find-me").onclick = findMe;
+$("find-friend-btn").onclick = findFriend;
+$("headphone-find").onclick = findHeadphones;
+$("headphone-test").onclick = playHeadphoneTest;
+setupHeadphones();
 
 $("start").onclick = startSharing;
 $("stop").onclick = stopSharing;
