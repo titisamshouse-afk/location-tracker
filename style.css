@@ -52,3 +52,20 @@ h1{margin:0 0 8px}
   .friend-row{align-items:flex-start}
   .friend-actions{flex-direction:column}
 }
+
+.find-panel,.headphones-panel{border-top:1px solid #e5e7eb}
+.find-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.find-head h2{font-size:18px;margin:0 0 3px}
+.find-tools{display:grid;grid-template-columns:110px 1fr auto;gap:8px;align-items:center}
+.find-label{font-weight:600}
+.find-tools select{width:100%;padding:11px;border:1px solid #d1d5db;border-radius:10px;background:#fff;color:#111827}
+.find-tools .btn{width:auto;white-space:nowrap}
+.full-btn{margin-top:10px}
+.headphone-note{margin-top:10px;line-height:1.4}
+#headphone-message,#find-message{margin-top:9px}
+@media(max-width:560px){
+  .find-tools{grid-template-columns:1fr}
+  .find-label{margin-bottom:-4px}
+  .find-tools .btn{width:100%}
+  .find-head{align-items:flex-start}
+}
