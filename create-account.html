@@ -1,2 +1,55 @@
-<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Create Account</title><link rel="stylesheet" href="style.css"><main class="auth"><section class="card"><h1>Create account</h1><p class="muted">Use 3–32 letters, numbers, or underscores.</p><form id="f"><div class="field"><label>Username</label><input id="u" minlength="3" maxlength="32" pattern="[A-Za-z0-9_]+" required></div><div class="field"><label>Password</label><input id="p" type="password" minlength="8" required></div><div class="field"><label>Confirm password</label><input id="c" type="password" minlength="8" required></div><button class="btn">Create account</button><div id="m"></div></form><a class="link" href="login.html">Back to login</a></section></main><script type="module">
-import{createClient}from"https://esm.sh/@supabase/supabase-js@2";const s=createClient("https://qiwfbgswukaixyhlzekw.supabase.co","sb_publishable_bAIMCv0YQnAsWv_ppNzWhQ_uSRRFyTC");f.onsubmit=async e=>{e.preventDefault();if(p.value!==c.value){m.className="error";m.textContent="Passwords do not match.";return}m.textContent="Creating account...";let{data,error}=await s.rpc("create_account",{p_username:u.value,p_password:p.value});if(error){m.className="error";m.textContent=error.message;return}localStorage.setItem("lt_token",data.token);localStorage.setItem("lt_user",data.username);location="app.html"};</script>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Create Account</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="auth">
+<section class="card">
+<h1>Create account</h1>
+<p class="muted">Before creating an account, please read how Location Tracker handles location data.</p>
+
+<div class="consent-box">
+<h2>Location & Privacy</h2>
+<p>Location Tracker can let you share your current or last-known location with friends you choose. The mobile app can also use background location when you grant that device permission.</p>
+<ul>
+<li>Your location is sent to our Supabase database when sharing is enabled.</li>
+<li>Friends you add may be able to see your current or last-known location.</li>
+<li>The mobile app requests location updates approximately every 5 seconds, but your device may delay them.</li>
+<li>You can stop sharing and revoke location permission at any time.</li>
+<li>Do not use the service to secretly track another person.</li>
+</ul>
+<p><a class="link" href="privacy.html" target="_blank" rel="noopener">Read the full Privacy Policy</a></p>
+</div>
+
+<form id="f">
+<div class="field"><label>Username</label><input id="u" autocomplete="username" minlength="3" maxlength="32" pattern="[A-Za-z0-9_]+" required></div>
+<div class="field"><label>Password</label><input id="p" type="password" minlength="8" autocomplete="new-password" required></div>
+<div class="field"><label>Confirm password</label><input id="c" type="password" minlength="8" autocomplete="new-password" required></div>
+<label class="consent-check"><input id="agree" type="checkbox" required> <span>I have read and agree to the Privacy Policy and understand how location sharing works.</span></label>
+<button class="btn">Create account</button>
+<div id="m"></div>
+</form>
+<a class="link" href="login.html">Back to login</a>
+</section>
+</main>
+<script type="module">
+import{createClient}from"https://esm.sh/@supabase/supabase-js@2";
+const s=createClient("https://qiwfbgswukaixyhlzekw.supabase.co","sb_publishable_bAIMCv0YQnAsWv_ppNzWhQ_uSRRFyTC");
+f.onsubmit=async e=>{
+e.preventDefault();
+if(!agree.checked){m.className="error";m.textContent="Please read and accept the Privacy Policy.";return}
+if(p.value!==c.value){m.className="error";m.textContent="Passwords do not match.";return}
+m.textContent="Creating account...";
+let{data,error}=await s.rpc("create_account",{p_username:u.value,p_password:p.value});
+if(error){m.className="error";m.textContent=error.message;return}
+localStorage.setItem("lt_token",data.token);
+localStorage.setItem("lt_user",data.username);
+location="app.html";
+};
+</script>
+</body>
+</html>
