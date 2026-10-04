@@ -342,7 +342,7 @@ async function refreshFriends() {
   $("friend-count").textContent = friends.length ? friends.length + " friend" + (friends.length === 1 ? "" : "s") : "";
 
   const oldIds = new Set(friendMarkers.keys());
-  const activeIds = new Set(friends.filter(f => f.sharing && f.latitude != null && f.longitude != null).map(f => f.id));
+  const activeIds = new Set(friends.filter(f => f.latitude != null && f.longitude != null).map(f => f.id));
 
   for (const id of oldIds) {
     if (!activeIds.has(id)) {
@@ -352,7 +352,7 @@ async function refreshFriends() {
   }
 
   for (const friend of friends) {
-    if (friend.sharing && friend.latitude != null && friend.longitude != null) {
+    if (friend.latitude != null && friend.longitude != null) {
       let marker = friendMarkers.get(friend.id);
       if (!marker) {
         marker = L.marker([friend.latitude, friend.longitude]).addTo(map);
@@ -360,7 +360,11 @@ async function refreshFriends() {
       } else {
         marker.setLatLng([friend.latitude, friend.longitude]);
       }
-      marker.bindPopup(popupElement(friend.username, formatUpdated(friend.updated_at)));
+      marker.bindPopup(popupElement(
+        friend.username,
+        friend.sharing ? "Sharing location • " + formatUpdated(friend.updated_at)
+          : "Last known location • " + formatUpdated(friend.updated_at)
+      ));
     }
   }
 
@@ -390,7 +394,9 @@ async function refreshFriends() {
     status.className = "friend-status " + (friend.sharing ? "online" : "offline");
     status.textContent = friend.sharing
       ? "● Sharing location • " + formatUpdated(friend.updated_at)
-      : "● Not sharing";
+      : friend.updated_at
+        ? "● Last known location • " + formatUpdated(friend.updated_at)
+        : "● No location yet";
 
     info.append(name, status);
 
@@ -399,8 +405,8 @@ async function refreshFriends() {
 
     const center = document.createElement("button");
     center.className = "small secondary";
-    center.textContent = friend.sharing ? "View" : "Info";
-    center.disabled = !friend.sharing;
+    center.textContent = friend.latitude != null && friend.longitude != null ? "View" : "Info";
+    center.disabled = !(friend.latitude != null && friend.longitude != null);
     center.onclick = () => {
       const marker = friendMarkers.get(friend.id);
       if (marker) {
