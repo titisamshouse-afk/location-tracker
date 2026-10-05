@@ -30,13 +30,6 @@
     },
     "description": "Location sharing, friends, maps, privacy consent, and recovery codes.",
     "plugins": [],
-    "icon": "./location-tracker-icon.png",
-    "updates": {
-      "checkAutomatically": "ON_LOAD",
-      "fallbackToCacheTimeout": 0
-    },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    }
+    "icon": "./location-tracker-icon.png"
   }
 }
