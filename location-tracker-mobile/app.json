@@ -10,12 +10,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.titisamshouse.locationtracker",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Location Tracker uses your location to show you and your friends on the map.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Location Tracker uses background location so your friends can see your location even when the app is not open.",
-        "UIBackgroundModes": [
-          "location"
-        ],
-        "NSUserNotificationUsageDescription": "Location Tracker uses notifications to alert you when a friend sends an SOS."
+        "NSLocationWhenInUseUsageDescription": "Location Tracker uses your location to show you and your friends on the map."
       }
     },
     "android": {
