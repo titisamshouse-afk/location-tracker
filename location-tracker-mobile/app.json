@@ -2,7 +2,7 @@
   "expo": {
     "name": "Location Tracker",
     "slug": "location-tracker",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "orientation": "default",
     "scheme": "locationtracker",
     "userInterfaceStyle": "automatic",
@@ -26,11 +26,16 @@
         "ACCESS_BACKGROUND_LOCATION",
         "FOREGROUND_SERVICE",
         "FOREGROUND_SERVICE_LOCATION"
-      ]
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#e8f7ff",
+        "foregroundImage": "./assets/location-tracker-icon.png"
+      }
     },
     "description": "Location sharing, friends, maps, privacy consent, and recovery codes.",
     "plugins": [
       "expo-notifications"
-    ]
+    ],
+    "icon": "./assets/location-tracker-icon.png"
   }
 }
