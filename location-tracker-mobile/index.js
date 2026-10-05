@@ -1,3 +1,3 @@
 import { registerRootComponent } from "expo";
-import App from "./AppNew";
+import App from "./App";
 registerRootComponent(App);
