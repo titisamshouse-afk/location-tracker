@@ -1,10 +1,11 @@
 const config = require("./app.json");
 
-config.expo.version = "1.2.2";
-const icon = "./location-tracker-icon.png";
-config.expo.icon = icon;
-config.expo.android = config.expo.android || {};
-config.expo.android.icon = icon;
-delete config.expo.android.adaptiveIcon;
+config.expo.version = "1.2.3";
+// Android and iOS both use the existing Location Tracker PNG.
+config.expo.icon = "./location-tracker-icon.png";
+if (config.expo.android) {
+  delete config.expo.android.icon;
+  delete config.expo.android.adaptiveIcon;
+}
 
 module.exports = config;
