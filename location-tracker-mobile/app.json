@@ -36,6 +36,10 @@
     "plugins": [
       "expo-notifications"
     ],
-    "icon": "./assets/location-tracker-icon.png"
+    "icon": "./assets/location-tracker-icon.png",
+    "updates": {
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    }
   }
 }
