@@ -29,15 +29,15 @@
       ],
       "adaptiveIcon": {
         "backgroundColor": "#062b55",
-        "foregroundImage": "./assets/location-tracker-icon.svg"
+        "foregroundImage": "./assets/location-tracker-icon.png"
       },
-      "icon": "./assets/location-tracker-icon.svg"
+      "icon": "./assets/location-tracker-icon.png"
     },
     "description": "Location sharing, friends, maps, privacy consent, and recovery codes.",
     "plugins": [
       "expo-notifications"
     ],
-    "icon": "./assets/location-tracker-icon.svg",
+    "icon": "./assets/location-tracker-icon.png",
     "updates": {
       "checkAutomatically": "ON_LOAD",
       "fallbackToCacheTimeout": 0
