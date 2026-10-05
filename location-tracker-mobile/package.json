@@ -20,7 +20,6 @@
     "expo-notifications": "~0.32.0",
     "expo-battery": "~10.0.0",
     "expo-updates": "~0.28.17",
-    "expo-constants": "~18.0.0",
-    "react-native-webview": "~13.15.0"
+    "expo-constants": "~18.0.0"
   }
 }
