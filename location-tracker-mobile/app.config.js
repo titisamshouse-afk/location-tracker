@@ -3,8 +3,8 @@ const config = require("./app.json");
 config.expo.version = "1.2.2";
 
 // Use the existing Location Tracker artwork as the launcher icon.
-// Do not generate or reference a missing PNG at build time.
-const icon = "./assets/location-tracker-icon.svg";
+// Use the real PNG asset already stored in this repository.
+const icon = "./assets/location-tracker-icon.png";
 
 config.expo.icon = icon;
 config.expo.android = config.expo.android || {};
