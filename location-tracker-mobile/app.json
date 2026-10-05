@@ -14,7 +14,8 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Location Tracker uses background location so your friends can see your location even when the app is not open.",
         "UIBackgroundModes": [
           "location"
-        ]
+        ],
+        "NSUserNotificationUsageDescription": "Location Tracker uses notifications to alert you when a friend sends an SOS."
       }
     },
     "android": {
@@ -25,8 +26,15 @@
         "ACCESS_BACKGROUND_LOCATION",
         "FOREGROUND_SERVICE",
         "FOREGROUND_SERVICE_LOCATION"
-      ]
+      ],
+      "notification": {
+        "icon": "./assets/notification-icon.png",
+        "color": "#dc2626"
+      }
     },
-    "description": "Location sharing, friends, maps, privacy consent, and recovery codes."
+    "description": "Location sharing, friends, maps, privacy consent, and recovery codes.",
+    "plugins": [
+      "expo-notifications"
+    ]
   }
 }
