@@ -26,11 +26,7 @@
         "ACCESS_BACKGROUND_LOCATION",
         "FOREGROUND_SERVICE",
         "FOREGROUND_SERVICE_LOCATION"
-      ],
-      "notification": {
-        "icon": "./assets/notification-icon.png",
-        "color": "#dc2626"
-      }
+      ]
     },
     "description": "Location sharing, friends, maps, privacy consent, and recovery codes.",
     "plugins": [
