@@ -1,1 +1,3 @@
-import App from "./AppNew"; export default App;
+import { registerRootComponent } from "expo";
+import App from "./AppNew";
+registerRootComponent(App);
