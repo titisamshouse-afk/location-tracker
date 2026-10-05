@@ -1,245 +1,61 @@
 import React,{useEffect,useRef,useState}from"react";
-import{Alert,Linking,Modal,Platform,SafeAreaView,ScrollView,StyleSheet,Text,TextInput,TouchableOpacity,View}from"react-native";
-import*as Location from"expo-location";
-import*as TaskManager from"expo-task-manager";
-import*as SecureStore from"expo-secure-store";
-import{createClient}from"@supabase/supabase-js";
-import MapView,{Marker}from"react-native-maps";
+import{Alert,Image,Linking,Modal,Platform,Pressable,SafeAreaView,ScrollView,StyleSheet,Text,TextInput,TouchableOpacity,View}from"react-native";import*as Battery from"expo-battery";
+import*as Location from"expo-location";import*as TaskManager from"expo-task-manager";import*as SecureStore from"expo-secure-store";import{createClient}from"@supabase/supabase-js";
+const TILE_SIZE=256;
+function osmXY(lat,lng,z){const n=2**z, x=(lng+180)/360*n, r=lat*Math.PI/180, y=(1-Math.asinh(Math.tan(r))/Math.PI)/2*n;return{x,y}}
+function osmLatLng(x,y,z){const n=2**z,lng=x/n*360-180,lat=180/Math.PI*Math.atan(Math.sinh(Math.PI*(1-2*y/n)));return{latitude:lat,longitude:lng}}
+const OSMMap=React.forwardRef(function OSMMap({friends,markers,onLongPress},mapRef){const [center,setCenter]=React.useState({latitude:39,longitude:-104.8,zoom:5});const width=360,height=380;React.useImperativeHandle(mapRef,()=>({moveTo:(latitude,longitude,zoom=15)=>setCenter({latitude,longitude,zoom})}),[]);const z=Math.min(18,Math.max(2,Math.round(center.zoom))),p=osmXY(center.latitude,center.longitude,z),tiles=[];for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const tx=Math.floor(p.x)+dx,ty=Math.floor(p.y)+dy,n=2**z,xx=((tx%n)+n)%n;if(ty>=0&&ty<n)tiles.push({x:tx,y:ty,xx,top:height/2+(ty-p.y)*TILE_SIZE,left:width/2+(tx-p.x)*TILE_SIZE})}const pts=[...friends.map(f=>({...f,_type:"friend"})),...markers.map(m=>({...m,_type:"marker"}))];return <View style={s.map} onLayout={e=>{}}>{tiles.map(t=><Image key={t.x+"-"+t.y} source={{uri:"https://tile.openstreetmap.org/"+z+"/"+t.xx+"/"+t.y+".png"}} style={{position:"absolute",width:TILE_SIZE,height:TILE_SIZE,left:t.left,top:t.top}}/>)}<Pressable style={StyleSheet.absoluteFill} delayLongPress={550} onLongPress={e=>{const q=osmXY(center.latitude,center.longitude,z);const px=e.nativeEvent.locationX-width/2+q.x*TILE_SIZE,py=e.nativeEvent.locationY-height/2+q.y*TILE_SIZE;const ll=osmLatLng(px/TILE_SIZE,py/TILE_SIZE,z);onLongPress(ll)}}><View pointerEvents="none">{pts.map((m,i)=>{if(m.latitude==null||m.longitude==null)return null;const q=osmXY(+m.latitude,+m.longitude,z),cx=width/2+(q.x-p.x)*TILE_SIZE,cy=height/2+(q.y-p.y)*TILE_SIZE;return <View key={(m.id||m.username||i)+"m"} style={[s.mapPin,{left:cx-11,top:cy-22}]}><Text style={s.mapPinText}>{m._type==="marker"?"📍":"•"}</Text></View>})}<View style={s.mapAttribution}><Text style={s.mapAttributionText}>© OpenStreetMap contributors</Text></View></View></Pressable></View>})
+const URL="https://qiwfbgswukaixyhlzekw.supabase.co",KEY="sb_publishable_bAIMCv0YQnAsWv_ppNzWhQ_uSRRFyTC",TASK="location-tracker-background-location",PRIVACY="https://titisamshouse-afk.github.io/location-tracker/privacy.html",SOS_URL=URL+"/functions/v1/send-sos",sb=createClient(URL,KEY);
+TaskManager.defineTask(TASK,async({data,error})=>{if(error||!data?.locations?.length)return;const t=await SecureStore.getItemAsync("lt_token");if(!t)return;const l=data.locations.at(-1);await sb.rpc("save_my_location",{p_token:t,p_lat:l.coords.latitude,p_lng:l.coords.longitude,p_accuracy:l.coords.accuracy??null})});
+async function startShare(){const f=await Location.requestForegroundPermissionsAsync();if(f.status!=="granted")throw Error("Location permission is required.");const b=await Location.requestBackgroundPermissionsAsync();if(b.status!=="granted")throw Error(Platform.OS==="ios"?"Allow Always location in Settings.":"Allow background location.");if(await Location.hasStartedLocationUpdatesAsync(TASK))return;const o={accuracy:Location.Accuracy.High,distanceInterval:0,timeInterval:5000,pausesUpdatesAutomatically:false};if(Platform.OS==="android")o.foregroundService={notificationTitle:"Location Tracker",notificationBody:"Your location is being shared every 5 seconds."};await Location.startLocationUpdatesAsync(TASK,o)}
+async function stopShare(){if(await Location.hasStartedLocationUpdatesAsync(TASK))await Location.stopLocationUpdatesAsync(TASK)}
+function ago(v){if(!v)return"No location update yet";const n=Math.floor((Date.now()-new Date(v).getTime())/1000);return n<10?"Updated just now":n<60?"Updated "+n+"s ago":"Updated "+Math.floor(n/60)+"m ago"}
+function Icon({size=90}){return <View style={[s.icon,{width:size,height:size,borderRadius:size*.22}]}><View style={s.map1}/><View style={s.map2}/><View style={[s.ring,{width:size*.82,height:size*.82,borderRadius:size*.41,left:size*.09,top:size*.09}]}/><View style={[s.pin,{width:size*.45,height:size*.45,borderRadius:size*.23,left:size*.275,top:size*.29}]}><View style={[s.pinHole,{width:size*.19,height:size*.19,borderRadius:size*.095}]}/>{[0,1,2,3].map(i=><View key={i} style={[s.person,{left:i===1?size*.08:i===3?size*.66:size*.405,top:i===0?size*.04:i===1||i===2?size*.22:size*.70,backgroundColor:["#38bdf8","#a78bfa","#34d399","#fbbf24"][i]}]}><View style={s.head}/><View style={s.body}/></View>)}</View>}
 
-const URL="https://qiwfbgswukaixyhlzekw.supabase.co";
-const KEY="sb_publishable_bAIMCv0YQnAsWv_ppNzWhQ_uSRRFyTC";
-const TASK="location-tracker-background-location";
-const PRIVACY_URL="https://titisamshouse-afk.github.io/location-tracker/privacy.html";
-const sb=createClient(URL,KEY);
+function App(){
+const[token,setToken]=useState(null),[user,setUser]=useState(""),[locationGranted,setLocationGranted]=useState(false),[mapReady,setMapReady]=useState(false),[mode,setMode]=useState("login"),[screen,setScreen]=useState("home"),[pass,setPass]=useState(""),[name,setName]=useState(""),[err,setErr]=useState(""),[createPass,setCreatePass]=useState(""),[consent,setConsent]=useState(false),[friends,setFriends]=useState([]),[sharing,setSharing]=useState(false),[friend,setFriend]=useState(""),[add,setAdd]=useState(false),[addMsg,setAddMsg]=useState(""),[findMsg,setFindMsg]=useState(""),[recovery,setRecovery]=useState(""),[recoveryMsg,setRecoveryMsg]=useState(""),[forgotUser,setForgotUser]=useState(""),[forgotCode,setForgotCode]=useState(""),[newPass,setNewPass]=useState(""),[menu,setMenu]=useState(false),[markers,setMarkers]=useState([]),[markerModal,setMarkerModal]=useState(false),[markerName,setMarkerName]=useState(""),[pendingMarker,setPendingMarker]=useState(null),[battery,setBattery]=useState(null),[batteryState,setBatteryState]=useState("Unknown"),map=useRef(null);
 
-TaskManager.defineTask(TASK,async({data,error})=>{
-  if(error||!data?.locations?.length)return;
-  const token=await SecureStore.getItemAsync("lt_token");
-  if(!token)return;
-  const l=data.locations[data.locations.length-1];
-  await sb.rpc("save_my_location",{p_token:token,p_lat:l.coords.latitude,p_lng:l.coords.longitude,p_accuracy:l.coords.accuracy??null});
-});
+useEffect(()=>{(async()=>{try{const p=await Location.getForegroundPermissionsAsync();setLocationGranted(p.status==="granted")}catch(_){setLocationGranted(false)}try{setToken(await SecureStore.getItemAsync("lt_token"));setUser(await SecureStore.getItemAsync("lt_user")||"")}catch(_){}})();(async()=>{try{if(__DEV__)return;const u=await Updates.checkForUpdateAsync();if(u.isAvailable){await Updates.fetchUpdateAsync();await Updates.reloadAsync()}}catch(e){console.log("Update check failed",e)}})()},[]);
+useEffect(()=>{if(!token)return;refresh();loadMarkers();const i=setInterval(refresh,5000);const t=setTimeout(()=>setMapReady(true),1200);return()=>{clearInterval(i);clearTimeout(t)}},[token]);
 
-async function startSharing(){
-  const f=await Location.requestForegroundPermissionsAsync();
-  if(f.status!=="granted")throw Error("Location permission is required.");
-  const b=await Location.requestBackgroundPermissionsAsync();
-  if(b.status!=="granted")throw Error(Platform.OS==="ios"?"Allow Always location in Settings.":"Allow background location.");
-  if(await Location.hasStartedLocationUpdatesAsync(TASK))return;
-  const o={accuracy:Location.Accuracy.High,distanceInterval:0,timeInterval:5000,pausesUpdatesAutomatically:false};
-  if(Platform.OS==="android")o.foregroundService={notificationTitle:"Location Tracker",notificationBody:"Your location is being shared every 5 seconds."};
-  await Location.startLocationUpdatesAsync(TASK,o);
+useEffect(()=>{if(screen==="device")loadBattery()},[screen]);
+async function loadMarkers(){if(!token)return;try{const r=await sb.rpc("list_map_markers",{p_token:token});if(!r.error)setMarkers(r.data||[])}catch(e){console.log("Marker load failed",e)}}
+async function loadBattery(){try{const level=await Battery.getBatteryLevelAsync();setBattery(level>=0?Math.round(level*100):null);const st=await Battery.getBatteryStateAsync();setBatteryState(st===Battery.BatteryState.CHARGING?"Charging":st===Battery.BatteryState.FULL?"Full":st===Battery.BatteryState.UNPLUGGED?"Not charging":"Unknown")}catch(_){setBattery(null);setBatteryState("Unavailable")}}
+function openMarkerAt(coord){setPendingMarker(coord);setMarkerName("");setMarkerModal(true)}
+async function markCurrentLocation(){try{const p=await Location.getCurrentPositionAsync({accuracy:Location.Accuracy.High});openMarkerAt({latitude:p.coords.latitude,longitude:p.coords.longitude})}catch(e){setErr(e.message)}}
+async function saveMarker(){const n=markerName.trim();if(!pendingMarker)return;if(!n)return setErr("Enter a name for the pin.");try{const r=await sb.rpc("create_map_marker",{p_token:token,p_label:n,p_latitude:pendingMarker.latitude,p_longitude:pendingMarker.longitude});if(r.error)throw Error(r.error.message);setMarkerModal(false);setMarkerName("");setPendingMarker(null);setErr("");await loadMarkers()}catch(e){setErr(e.message)}}
+async function deleteMarker(m){Alert.alert("Delete pin?","Delete "+m.label+"?",[{text:"Cancel"},{text:"Delete",style:"destructive",onPress:async()=>{const r=await sb.rpc("delete_map_marker",{p_token:token,p_marker_id:m.id});if(r.error)Alert.alert("Error",r.error.message);else loadMarkers()}}])}
+async function refresh(){if(!token)return;const a=await sb.rpc("my_location_status",{p_token:token});if(!a.error)setSharing(!!a.data?.sharing);const f=await sb.rpc("list_friends",{p_token:token});if(!f.error){const x=new Set();setFriends((f.data||[]).filter(v=>{const k=String(v.id);if(x.has(k))return false;x.add(k);return true}))}}
+async function login(){setErr("");const r=await sb.rpc("login_account",{p_username:name.trim(),p_password:pass});if(r.error)return setErr(r.error.message);await SecureStore.setItemAsync("lt_token",r.data.token);await SecureStore.setItemAsync("lt_user",r.data.username);setToken(r.data.token);setUser(r.data.username);setPass("")}
+async function create(){setErr("");if(!consent)return setErr("You must accept the Privacy Policy before creating an account.");if(createPass.length<8)return setErr("Password must be at least 8 characters.");const r=await sb.rpc("create_account",{p_username:name.trim(),p_password:createPass});if(r.error)return setErr(r.error.message);await SecureStore.setItemAsync("lt_token",r.data.token);await SecureStore.setItemAsync("lt_user",r.data.username);setToken(r.data.token);setUser(r.data.username)}
+async function reset(){setErr("");if(!forgotUser.trim()||!forgotCode.trim()||newPass.length<8)return setErr("Enter your username, recovery code, and a new password of at least 8 characters.");const r=await sb.rpc("reset_password_with_recovery",{p_username:forgotUser.trim(),p_recovery_code:forgotCode.trim(),p_new_password:newPass});if(r.error)return setErr(r.error.message);Alert.alert("Password reset","Your password was reset. You can log in now.");setMode("login");setName(forgotUser.trim());setPass("")}
+async function changePassword(){setErr("");if(pass.length<1||newPass.length<8)return setErr("Enter your current password and a new password of at least 8 characters.");const r=await sb.rpc("change_password",{p_token:token,p_current_password:pass,p_new_password:newPass});if(r.error)return setErr(r.error.message);setPass("");setNewPass("");Alert.alert("Password changed","Your password has been changed successfully.");}\nasync function makeRecovery(){setRecoveryMsg("");const r=await sb.rpc("generate_recovery_code",{p_token:token});if(r.error)return setRecoveryMsg(r.error.message);setRecovery(r.data.recovery_code);setRecoveryMsg("Save this code somewhere private. A new code invalidates the old one.")}
+async function sendSOS(){Alert.alert("Send SOS?","This will send an emergency notification to all of your Location Tracker friends. The app will request your current location for the SOS only.",[{text:"Cancel",style:"cancel"},{text:"Send SOS",style:"destructive",onPress:async()=>{try{setErr("");let p=null;try{p=await Location.getCurrentPositionAsync({accuracy:Location.Accuracy.High})}catch(_){}const r=await sb.rpc("create_sos_event",{p_token:token,p_latitude:p?.coords?.latitude??null,p_longitude:p?.coords?.longitude??null,p_accuracy:p?.coords?.accuracy??null});if(r.error)throw Error(r.error.message);const res=await fetch(SOS_URL,{method:"POST",headers:{"Content-Type":"application/json",apikey:KEY,Authorization:"Bearer "+token},body:JSON.stringify({event_id:r.data?.event_id})});const data=await res.json();if(!res.ok||data.error)throw Error(data.error||"Could not send SOS notifications.");Alert.alert("SOS sent","Your friends have been notified.")}catch(e){setErr(e.message)}}}])}
+async function share(){try{setErr("");const p=await Location.getForegroundPermissionsAsync();if(p.status!=="granted"){const r=await Location.requestForegroundPermissionsAsync();if(r.status!=="granted")throw Error("Location permission is required.");}setLocationGranted(true);await startShare();setSharing(true);await refresh()}catch(e){setErr(e.message)}}
+async function unshare(){try{await stopShare();const r=await sb.rpc("stop_my_location",{p_token:token});if(r.error)throw Error(r.error.message);setSharing(false)}catch(e){setErr(e.message)}}
+async function findMe(){try{const perm=await Location.getForegroundPermissionsAsync();if(perm.status!=="granted")throw Error("Allow location permission first.");const p=await Location.getCurrentPositionAsync({accuracy:Location.Accuracy.High});moveMap(p.coords.latitude,p.coords.longitude);setFindMsg("Found you.")}catch(e){setFindMsg(e.message)}}
+function moveMap(latitude,longitude){map.current?.moveTo(+latitude,+longitude,15)}
+function find(f){if(f.latitude==null)return setFindMsg(f.username+" has no location yet.");moveMap(+f.latitude,+f.longitude);setFindMsg("Showing "+f.username+"'s latest location.")}
+async function addFriend(){const n=friend.trim();if(!n)return setAddMsg("Enter a username.");const r=await sb.rpc("add_friend",{p_token:token,p_friend_username:n});if(r.error)return setAddMsg(r.error.message);setFriend("");setAddMsg("Friend added!");await refresh();setTimeout(()=>setAdd(false),500)}
+async function remove(f){Alert.alert("Remove friend?","Remove "+f.username+"?",[{text:"Cancel"},{text:"Remove",style:"destructive",onPress:async()=>{await sb.rpc("remove_friend",{p_token:token,p_friend_id:f.id});refresh()}}])}
+async function logout(){await stopShare().catch(()=>{});await sb.rpc("logout_account",{p_token:token});await SecureStore.deleteItemAsync("lt_token");await SecureStore.deleteItemAsync("lt_user");setToken(null);setUser("");setScreen("home");setMode("login")}
+
+const Field=({placeholder,value,onChange,secure=false})=><TextInput style={s.input} placeholder={placeholder} placeholderTextColor="#7290a5" value={value} onChangeText={onChange} secureTextEntry={secure} autoCapitalize="none"/>;
+if(!token&&mode==="login")return <SafeAreaView style={s.auth}><Icon size={110}/><Text style={s.title}>Location Tracker</Text><Text style={s.sub}>Find your friends and share your location.</Text><Field placeholder="Username" value={name} onChange={setName}/><Field placeholder="Password" value={pass} onChange={setPass} secure/><Text style={s.error}>{err}</Text><Btn text="Log in" on={login}/><TouchableOpacity onPress={()=>setMode("forgot")}><Text style={s.link}>Forgot password?</Text></TouchableOpacity><TouchableOpacity style={s.outline} onPress={()=>{setMode("create");setErr("")}}><Text style={s.outText}>Create an account</Text></TouchableOpacity></SafeAreaView>;
+if(!token&&mode==="forgot")return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.authPage}><TouchableOpacity onPress={()=>setMode("login")}><Text style={s.back}>‹ Back to log in</Text></TouchableOpacity><Icon size={78}/><Text style={s.title}>Forgot password</Text><Text style={s.sub}>Use the recovery code you saved in Account Settings.</Text><Field placeholder="Username" value={forgotUser} onChange={setForgotUser}/><Field placeholder="Recovery code" value={forgotCode} onChange={setForgotCode}/><Field placeholder="New password (8+ characters)" value={newPass} onChange={setNewPass} secure/><Text style={s.error}>{err}</Text><Btn text="Reset password" on={reset}/></ScrollView></SafeAreaView>;
+if(!token&&mode==="create")return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.authPage}><Icon size={78}/><Text style={s.title}>Create your account</Text><Text style={s.sub}>Review privacy and location sharing before continuing.</Text><View style={s.policy}><Text style={s.policyTitle}>Privacy & Location Consent</Text><Text style={s.policyText}>Location Tracker uses account, friend, session, and location information to provide its features. Location sharing starts only after you choose Start sharing and grant device permission. Background location may continue while sharing is enabled.</Text><TouchableOpacity onPress={()=>Linking.openURL(PRIVACY)}><Text style={s.link}>Read the full Privacy Policy</Text></TouchableOpacity></View><TouchableOpacity style={s.checkRow} onPress={()=>setConsent(!consent)}><View style={[s.checkbox,consent&&s.checked]}>{consent&&<Text style={s.check}>✓</Text>}</View><Text style={s.checkText}>I have read and agree to the Privacy Policy and understand how location sharing works.</Text></TouchableOpacity><Field placeholder="Username" value={name} onChange={setName}/><Field placeholder="Password (8+ characters)" value={createPass} onChange={setCreatePass} secure/><Text style={s.error}>{err}</Text><Btn text="Create account" on={create}/><TouchableOpacity onPress={()=>setMode("login")}><Text style={s.link}>Back to log in</Text></TouchableOpacity></ScrollView></SafeAreaView>;
+
+if(screen==="device")return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.content}><View style={s.top}><TouchableOpacity onPress={()=>setScreen("home")}><Text style={s.back}>‹ Back</Text></TouchableOpacity><Text style={s.topTitle}>Device Info</Text><View style={{width:45}}/></View><View style={s.hero}><Icon size={96}/><Text style={s.accountName}>Your Device</Text></View><View style={s.card}><Text style={s.section}>Battery</Text><Text style={s.bigBlue}>{battery==null?"Unavailable":battery+"%"}</Text><Text style={s.muted}>{batteryState}</Text></View><View style={s.card}><Text style={s.section}>Location</Text><Text style={s.muted}>{locationGranted?"Location permission granted":"Location permission not granted"}</Text><Text style={s.muted}>Sharing: {sharing?"On":"Off"}</Text></View><View style={s.card}><Text style={s.section}>App</Text><Text style={s.muted}>Location Tracker 2.0.0</Text><Text style={s.muted}>Signed in as {user}</Text></View></ScrollView></SafeAreaView>;
+if(screen==="pins")return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.content}><View style={s.top}><TouchableOpacity onPress={()=>setScreen("home")}><Text style={s.back}>‹ Back</Text></TouchableOpacity><Text style={s.topTitle}>Saved Pins</Text><View style={{width:45}}/></View><View style={s.card}><Text style={s.section}>Mark a location</Text><Text style={s.muted}>Use your current location or long-press the map to mark a friend's house, school, meeting place, or anything else.</Text><Btn text="＋ Mark my current location" on={markCurrentLocation}/></View>{markers.map(m=><View key={m.id} style={s.friendRow}><View style={{flex:1}}><Text style={s.label}>📍 {m.label}</Text><Text style={s.muted}>{Number(m.latitude).toFixed(5)}, {Number(m.longitude).toFixed(5)}</Text></View><TouchableOpacity style={s.remove} onPress={()=>{setScreen("home");setTimeout(()=>moveMap(+m.latitude,+m.longitude),100)}}><Text style={s.removeText}>View</Text></TouchableOpacity><TouchableOpacity style={s.remove} onPress={()=>deleteMarker(m)}><Text style={s.removeText}>Delete</Text></TouchableOpacity></View>)}{!markers.length&&<View style={s.card}><Text style={s.muted}>No saved pins yet.</Text></View>}</ScrollView></SafeAreaView>;
+if(screen==="sos")return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.content}><View style={s.top}><TouchableOpacity onPress={()=>setScreen("home")}><Text style={s.back}>‹ Back</Text></TouchableOpacity><Text style={s.topTitle}>Emergency SOS</Text><View style={{width:45}}/></View><View style={s.card}><Text style={s.section}>🆘 Emergency notification</Text><Text style={s.muted}>Send an emergency notification to your active Location Tracker friends. Your current location is requested only when you send the SOS.</Text><TouchableOpacity style={s.sosButton} onPress={sendSOS}><Text style={s.sosText}>SEND SOS</Text></TouchableOpacity></View></ScrollView></SafeAreaView>;
+if(screen==="friends")return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.content}><View style={s.top}><TouchableOpacity onPress={()=>setScreen("home")}><Text style={s.back}>‹ Back</Text></TouchableOpacity><Text style={s.topTitle}>Friends</Text><View style={{width:45}}/></View><View style={s.card}><View style={s.between}><Text style={s.section}>Friends {friends.length}</Text><TouchableOpacity style={s.secondary} onPress={()=>setAdd(true)}><Text style={s.secondaryText}>＋ Add friend</Text></TouchableOpacity></View>{friends.map(f=><View key={String(f.id)} style={s.friendRow}><View style={{flex:1}}><Text style={s.label}>{f.username}</Text><Text style={f.sharing?s.online:s.muted}>{f.sharing?"● Sharing • "+ago(f.updated_at):f.updated_at?"● Last known • "+ago(f.updated_at):"● No location yet"}</Text></View><TouchableOpacity style={s.remove} onPress={()=>find(f)}><Text style={s.removeText}>View</Text></TouchableOpacity><TouchableOpacity style={s.remove} onPress={()=>remove(f)}><Text style={s.removeText}>Remove</Text></TouchableOpacity></View>)}{!friends.length&&<Text style={s.muted}>No friends yet.</Text>}</View></ScrollView></SafeAreaView>;
+if(screen==="settings")return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.content}><View style={s.top}><TouchableOpacity onPress={()=>setScreen("home")}><Text style={s.back}>‹ Back</Text></TouchableOpacity><Text style={s.topTitle}>Account Settings</Text><View style={{width:45}}/></View><View style={s.hero}><Icon size={96}/><Text style={s.accountName}>{user}</Text><Text style={s.muted}>Location Tracker account</Text></View><View style={s.card}><Text style={s.section}>Account</Text><View style={s.row}><Text style={s.label}>Username</Text><Text style={s.value}>{user}</Text></View></View><View style={s.card}><Text style={s.section}>Change Password</Text><Field placeholder="Current password" value={pass} onChange={setPass} secure/><Field placeholder="New password (8+ characters)" value={newPass} onChange={setNewPass} secure/><Btn text="Change password" on={changePassword}/></View><View style={s.card}><Text style={s.section}>Password & Recovery</Text><Text style={s.muted}>Generate a recovery code and save it somewhere private. You can use it from Forgot password if you lose your password.</Text>{recovery&&<View style={s.codeBox}><Text style={s.codeLabel}>RECOVERY CODE</Text><Text selectable style={s.code}>{recovery}</Text><Text style={s.muted}>This code is shown once on this screen. A new code replaces the old one.</Text></View>}{recoveryMsg?<Text style={s.success}>{recoveryMsg}</Text>:null}<Btn text={recovery?"Generate new recovery code":"Generate recovery code"} on={makeRecovery}/></View><View style={s.card}><Text style={s.section}>Privacy</Text><TouchableOpacity style={s.row} onPress={()=>Linking.openURL(PRIVACY)}><Text style={s.label}>Privacy Policy</Text><Text style={s.arrow}>›</Text></TouchableOpacity></View><View style={s.card}><Btn text="Log out" on={logout}/></View></ScrollView></SafeAreaView>;
+
+return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.content}><View style={s.top}><View><Text style={s.title}>Location Tracker</Text><Text style={s.muted}>Signed in as {user}</Text></View><TouchableOpacity style={s.settingsButton} onPress={()=>setMenu(true)}><Text style={s.settingsText}>☰</Text></TouchableOpacity></View>{screen==="home"&&mapReady?<OSMMap ref={map} friends={friends} markers={markers} onLongPress={openMarkerAt}/>:screen==="home"?<View style={[s.map,{alignItems:"center",justifyContent:"center"}]}><Text style={s.muted}>Loading map…</Text></View>:null}<View style={s.card}><View style={s.between}><View><Text style={s.section}>Find</Text><Text style={s.muted}>Locate yourself or a friend.</Text></View><TouchableOpacity style={s.secondary} onPress={findMe}><Text style={s.secondaryText}>Find me</Text></TouchableOpacity></View>{findMsg?<Text style={s.success}>{findMsg}</Text>:null}{friends.map(f=><TouchableOpacity key={"f"+f.id} style={s.findRow} onPress={()=>find(f)}><Text style={s.label}>{f.username}</Text><Text style={s.muted}>{f.latitude!=null?(f.sharing?"📍 Sharing • ":"📌 Last known • ")+ago(f.updated_at):"No location yet"} ›</Text></TouchableOpacity>)}{!friends.length&&<Text style={s.muted}>No friends yet.</Text>}</View><View style={s.card}><View style={s.between}><Text style={s.section}>Friends {friends.length}</Text><TouchableOpacity style={s.secondary} onPress={()=>setAdd(true)}><Text style={s.secondaryText}>＋ Add friend</Text></TouchableOpacity></View>{friends.map(f=><View key={String(f.id)} style={s.friendRow}><View style={{flex:1}}><Text style={s.label}>{f.username}</Text><Text style={f.sharing?s.online:s.muted}>{f.sharing?"● Sharing • "+ago(f.updated_at):f.updated_at?"● Last known • "+ago(f.updated_at):"● No location yet"}</Text></View><TouchableOpacity style={s.remove} onPress={()=>remove(f)}><Text style={s.removeText}>Remove</Text></TouchableOpacity></View>)}</View><View style={s.card}><Text style={s.section}>📍 Saved Pins</Text><Text style={s.muted}>Long-press the map to mark a friend's house or another location.</Text><View style={s.between}><TouchableOpacity style={s.secondary} onPress={markCurrentLocation}><Text style={s.secondaryText}>Mark this spot</Text></TouchableOpacity><TouchableOpacity style={s.secondary} onPress={()=>setScreen("pins")}><Text style={s.secondaryText}>Manage pins</Text></TouchableOpacity></View></View><View style={s.card}><Text style={s.section}>🆘 SOS</Text><Text style={s.muted}>Send an emergency notification to all of your friends.</Text><TouchableOpacity style={s.sosButton} onPress={sendSOS}><Text style={s.sosText}>SEND SOS</Text></TouchableOpacity></View><View style={s.card}><Text style={s.section}>{sharing?"🟢 Sharing location every 5 seconds":"⚪ Not sharing"}</Text><Btn text={sharing?"Stop sharing":"Start sharing every 5 seconds"} on={sharing?unshare:share}/><Text style={s.muted}>Location permission is requested when you start sharing.</Text>{err?<Text style={s.error}>{err}</Text>:null}</View></ScrollView><Modal visible={menu} transparent animationType="slide" onRequestClose={()=>setMenu(false)}><View style={s.drawerBg}><View style={s.drawer}><Text style={s.drawerTitle}>Location Tracker</Text><Text style={s.drawerSub}>Menu</Text>{[["home","⌂  Home"],["friends","👥  Friends"],["pins","📍  Saved Pins"],["sos","🆘  Emergency SOS"],["device","🔋  Device Info"],["settings","⚙  Account Settings"]].map(([v,t])=><TouchableOpacity key={v} style={s.menuItem} onPress={()=>{setMenu(false);setScreen(v)}}><Text style={s.menuText}>{t}</Text></TouchableOpacity>)}<TouchableOpacity style={s.menuItem} onPress={()=>Linking.openURL(PRIVACY)}><Text style={s.menuText}>🔒  Privacy Policy</Text></TouchableOpacity><TouchableOpacity style={s.menuItem} onPress={logout}><Text style={s.menuText}>↪  Log out</Text></TouchableOpacity><TouchableOpacity style={s.closeMenu} onPress={()=>setMenu(false)}><Text style={s.closeMenuText}>Close</Text></TouchableOpacity></View></View></Modal><Modal visible={markerModal} transparent animationType="fade" onRequestClose={()=>setMarkerModal(false)}><View style={s.modalBg}><View style={s.modal}><Text style={s.section}>📍 Name this location</Text><Text style={s.muted}>Give this pin a name, such as "Friend's house".</Text><Field placeholder="Pin name" value={markerName} onChange={setMarkerName}/><Btn text="Save pin" on={saveMarker}/><TouchableOpacity onPress={()=>setMarkerModal(false)}><Text style={s.link}>Cancel</Text></TouchableOpacity></View></View></Modal><Modal visible={add} transparent animationType="fade" onRequestClose={()=>setAdd(false)}><View style={s.modalBg}><View style={s.modal}><View style={s.between}><Text style={s.section}>Add a friend</Text><TouchableOpacity onPress={()=>setAdd(false)}><Text style={s.close}>×</Text></TouchableOpacity></View><Text style={s.muted}>Enter their exact username.</Text><Field placeholder="Username" value={friend} onChange={setFriend}/>{addMsg?<Text style={addMsg==="Friend added!"?s.success:s.error}>{addMsg}</Text>:null}<Btn text="Add friend" on={addFriend}/></View></View></Modal></SafeAreaView>
 }
-async function stopSharing(){
-  if(await Location.hasStartedLocationUpdatesAsync(TASK))await Location.stopLocationUpdatesAsync(TASK);
-}
-function formatUpdated(value){
-  if(!value)return"No location update yet";
-  const sec=Math.max(0,Math.floor((Date.now()-new Date(value).getTime())/1000));
-  if(sec<10)return"Updated just now";
-  if(sec<60)return"Updated "+sec+"s ago";
-  return"Updated "+Math.floor(sec/60)+"m ago";
-}
-
-export default function App(){
-  const[token,setToken]=useState(null),[username,setUsername]=useState(""),[loginUser,setLoginUser]=useState(""),[loginPass,setLoginPass]=useState(""),
-    [sharing,setSharing]=useState(false),[friends,setFriends]=useState([]),[err,setErr]=useState(""),
-    [friendName,setFriendName]=useState(""),[addOpen,setAddOpen]=useState(false),[addMsg,setAddMsg]=useState(""),
-    [findMsg,setFindMsg]=useState(""),[authMode,setAuthMode]=useState("login"),[privacyAccepted,setPrivacyAccepted]=useState(false),
-    [createUser,setCreateUser]=useState(""),[createPass,setCreatePass]=useState(""),[createMsg,setCreateMsg]=useState(""),map=useRef(null);
-
-  useEffect(()=>{(async()=>{
-    setToken(await SecureStore.getItemAsync("lt_token"));
-    setUsername(await SecureStore.getItemAsync("lt_user")||"");
-  })()},[]);
-
-  useEffect(()=>{
-    if(!token)return;
-    refresh();
-    const i=setInterval(refresh,5000);
-    return()=>clearInterval(i);
-  },[token]);
-
-  async function refresh(){
-    if(!token)return;
-    const a=await sb.rpc("my_location_status",{p_token:token});
-    if(!a.error)setSharing(!!a.data?.sharing);
-    const f=await sb.rpc("list_friends",{p_token:token});
-    if(!f.error){
-      const seen=new Set();
-      const unique=(f.data||[]).filter(x=>{
-        const k=String(x.id);
-        if(seen.has(k))return false;
-        seen.add(k);return true;
-      });
-      setFriends(unique);
-    }
-  }
-
-  async function login(){
-    setErr("");
-    const r=await sb.rpc("login_account",{p_username:loginUser.trim(),p_password:loginPass});
-    if(r.error){setErr(r.error.message);return}
-    await SecureStore.setItemAsync("lt_token",r.data.token);
-    await SecureStore.setItemAsync("lt_user",r.data.username);
-    setToken(r.data.token);setUsername(r.data.username);
-  }
-
-  async function createAccount(){
-    setCreateMsg("");
-    const name=createUser.trim();
-    if(!privacyAccepted){setCreateMsg("You must read and agree to the Privacy Policy before creating an account.");return}
-    if(!name||!createPass){setCreateMsg("Enter a username and password.");return}
-    if(createPass.length<6){setCreateMsg("Password must be at least 6 characters.");return}
-    const r=await sb.rpc("create_account",{p_username:name,p_password:createPass});
-    if(r.error){setCreateMsg(r.error.message);return}
-    if(!r.data?.token){setCreateMsg("Account created, but no login session was returned. Please log in.");setAuthMode("login");setLoginUser(name);setLoginPass("");return}
-    await SecureStore.setItemAsync("lt_token",r.data.token);
-    await SecureStore.setItemAsync("lt_user",r.data.username||name);
-    setToken(r.data.token);setUsername(r.data.username||name);
-    setCreateUser("");setCreatePass("");setPrivacyAccepted(false);setCreateMsg("");
-  }
-
-  async function share(){
-    try{setErr("");await startSharing();setSharing(true);await refresh()}
-    catch(e){setErr(e.message)}
-  }
-  async function unshare(){
-    try{await stopSharing();const r=await sb.rpc("stop_my_location",{p_token:token});if(r.error)throw Error(r.error.message);setSharing(false)}
-    catch(e){setErr(e.message)}
-  }
-  async function findMe(){
-    try{
-      setFindMsg("Finding your location…");
-      const p=await Location.getCurrentPositionAsync({accuracy:Location.Accuracy.High});
-      map.current?.animateToRegion({latitude:p.coords.latitude,longitude:p.coords.longitude,latitudeDelta:.01,longitudeDelta:.01},700);
-      setFindMsg("Found you. Accuracy ±"+Math.round(p.coords.accuracy||0)+" m.");
-    }catch(e){setFindMsg("Could not find you: "+e.message)}
-  }
-  function findFriend(friend){
-    if(friend.latitude==null||friend.longitude==null){setFindMsg(friend.username+" has no location yet.");return}
-    map.current?.animateToRegion({latitude:+friend.latitude,longitude:+friend.longitude,latitudeDelta:.01,longitudeDelta:.01},700);
-    setFindMsg("Showing "+friend.username+"'s latest location.");
-  }
-  async function addFriend(){
-    const name=friendName.trim();
-    if(!name){setAddMsg("Enter a username.");return}
-    setAddMsg("Adding friend…");
-    const r=await sb.rpc("add_friend",{p_token:token,p_friend_username:name});
-    if(r.error){setAddMsg(r.error.message);return}
-    setAddMsg("Friend added!");setFriendName("");await refresh();
-    setTimeout(()=>{setAddOpen(false);setAddMsg("")},500);
-  }
-  async function removeFriend(friend){
-    Alert.alert("Remove friend?","Remove "+friend.username+" from your friends?",[
-      {text:"Cancel",style:"cancel"},
-      {text:"Remove",style:"destructive",onPress:async()=>{
-        const r=await sb.rpc("remove_friend",{p_token:token,p_friend_id:friend.id});
-        if(r.error)Alert.alert("Error",r.error.message);else refresh();
-      }}
-    ]);
-  }
-  async function logout(){
-    await stopSharing().catch(()=>{});
-    await sb.rpc("logout_account",{p_token:token});
-    await SecureStore.deleteItemAsync("lt_token");await SecureStore.deleteItemAsync("lt_user");
-    setToken(null);setUsername("");
-  }
-
-  if(!token&&authMode==="login")return <SafeAreaView style={s.auth}>
-    <Text style={s.title}>Location Tracker</Text>
-    <Text style={s.subtitle}>Sign in to see your friends and share your location.</Text>
-    <TextInput style={s.input} placeholder="Username" value={loginUser} onChangeText={setLoginUser} autoCapitalize="none"/>
-    <TextInput style={s.input} placeholder="Password" value={loginPass} onChangeText={setLoginPass} secureTextEntry/>
-    {err?<Text style={s.err}>{err}</Text>:null}
-    <Btn t="Log in" f={login}/>
-    <TouchableOpacity style={s.linkButton} onPress={()=>{setAuthMode("create");setCreateMsg("");setPrivacyAccepted(false)}}><Text style={s.link}>Create an account</Text></TouchableOpacity>
-  </SafeAreaView>;
-
-  if(!token&&authMode==="create")return <SafeAreaView style={s.safe}>
-    <ScrollView contentContainerStyle={s.authCreate}>
-      <Text style={s.title}>Create your account</Text>
-      <Text style={s.subtitle}>Please review the privacy and location-sharing information before creating an account.</Text>
-      <View style={s.policyBox}>
-        <Text style={s.policyTitle}>Privacy & Location Consent</Text>
-        <Text style={s.policyText}>Location Tracker may collect your username, account/session information, friend relationships, and device location information such as latitude, longitude, accuracy, and the time of a location update.</Text>
-        <Text style={s.policyText}>Your location is used to show you and let friends you choose see your current or last-known location when sharing is enabled. If you grant background location permission, the mobile app may collect location while running in the background and requests updates approximately every 5 seconds. Your device may delay updates.</Text>
-        <Text style={s.policyText}>Only add people you trust. Do not use Location Tracker to secretly monitor or track another person without their knowledge and permission.</Text>
-        <Text style={s.policyText}>Location Tracker uses Supabase to store and process account, friend, session, and location information. You can stop sharing, remove friends, revoke location permission, stop using the service, or request account deletion.</Text>
-        <Text style={s.policyText}>No Internet service can guarantee complete security. Parents or guardians should supervise a child's use of location-sharing features and permissions.</Text>
-        <TouchableOpacity onPress={()=>Linking.openURL(PRIVACY_URL)}><Text style={s.link}>Read the full Privacy Policy</Text></TouchableOpacity>
-      </View>
-      <TouchableOpacity style={s.checkRow} onPress={()=>setPrivacyAccepted(!privacyAccepted)} activeOpacity={.8}>
-        <View style={[s.checkbox,privacyAccepted&&s.checkboxChecked]}>{privacyAccepted?<Text style={s.checkmark}>✓</Text>:null}</View>
-        <Text style={s.checkText}>I have read and agree to the Privacy Policy and understand how location sharing works.</Text>
-      </TouchableOpacity>
-      <TextInput style={s.input} placeholder="Username" value={createUser} onChangeText={setCreateUser} autoCapitalize="none" maxLength={32}/>
-      <TextInput style={s.input} placeholder="Password (6+ characters)" value={createPass} onChangeText={setCreatePass} secureTextEntry/>
-      {createMsg?<Text style={s.err}>{createMsg}</Text>:null}
-      <Btn t="Create account" f={createAccount}/>
-      <TouchableOpacity style={s.linkButton} onPress={()=>{setAuthMode("login");setCreateMsg("")}}><Text style={s.link}>Back to log in</Text></TouchableOpacity>
-    </ScrollView>
-  </SafeAreaView>;
-
-  return <SafeAreaView style={s.safe}>
-    <ScrollView contentContainerStyle={s.content}>
-      <View style={s.header}>
-        <View><Text style={s.title}>Location Tracker</Text><Text style={s.muted}>Signed in as {username}</Text></View>
-        <TouchableOpacity onPress={logout}><Text style={s.logout}>Log out</Text></TouchableOpacity>
-      </View>
-      <MapView ref={map} style={s.map} initialRegion={{latitude:39,longitude:-104.8,latitudeDelta:8,longitudeDelta:8}} showsUserLocation showsMyLocationButton>
-        {friends.map(f=>f.latitude!=null&&f.longitude!=null?
-          <Marker key={String(f.id)} coordinate={{latitude:+f.latitude,longitude:+f.longitude}} title={f.username}
-            description={f.sharing?"Sharing location • "+formatUpdated(f.updated_at):"Last known location • "+formatUpdated(f.updated_at)}/>:null)}
-      </MapView>
-      <View style={s.card}>
-        <View style={s.rowBetween}><View><Text style={s.sectionTitle}>🔎 Find</Text><Text style={s.muted}>Quickly locate yourself or a friend.</Text></View><TouchableOpacity style={s.secondary} onPress={findMe}><Text style={s.secondaryText}>Find me</Text></TouchableOpacity></View>
-        {findMsg?<Text style={s.success}>{findMsg}</Text>:null}
-        <Text style={s.label}>Friends</Text>
-        {friends.map(f=><TouchableOpacity key={"find-"+f.id} style={s.findRow} onPress={()=>findFriend(f)}><Text style={s.friendName}>{f.username}</Text><Text style={s.small}>{f.latitude!=null&&f.longitude!=null?(f.sharing?"📍 Sharing • ":"📌 Last known • ")+formatUpdated(f.updated_at):"No location yet"}  ›</Text></TouchableOpacity>)}
-        {!friends.length?<Text style={s.muted}>Add a friend below to find them.</Text>:null}
-      </View>
-      <View style={s.card}>
-        <View style={s.rowBetween}><View><Text style={s.sectionTitle}>Friends <Text style={s.count}>{friends.length}</Text></Text></View><TouchableOpacity style={s.secondary} onPress={()=>{setAddOpen(true);setAddMsg("")}}><Text style={s.secondaryText}>＋ Add friend</Text></TouchableOpacity></View>
-        {friends.map(f=><View key={String(f.id)} style={s.friendRow}>
-          <View style={{flex:1}}><Text style={s.friendName}>{f.username}</Text><Text style={f.sharing?s.online:s.offline}>{f.sharing?"● Sharing location • "+formatUpdated(f.updated_at):f.updated_at?"● Last known location • "+formatUpdated(f.updated_at):"● No location yet"}</Text></View>
-          <View style={s.friendButtons}><TouchableOpacity style={s.smallBtn} disabled={f.latitude==null||f.longitude==null} onPress={()=>findFriend(f)}><Text style={s.smallBtnText}>{f.latitude!=null&&f.longitude!=null?"View":"Info"}</Text></TouchableOpacity><TouchableOpacity style={s.removeBtn} onPress={()=>removeFriend(f)}><Text style={s.removeText}>Remove</Text></TouchableOpacity></View>
-        </View>)}
-        {!friends.length?<Text style={s.muted}>No friends yet. Add someone by username.</Text>:null}
-      </View>
-      <View style={s.card}>
-        <Text style={s.status}>{sharing?"🟢 Sharing location every 5 seconds":"⚪ Not sharing"}</Text>
-        {sharing?<Btn t="Stop sharing" f={unshare}/>:<Btn t="Start sharing every 5 seconds" f={share}/>}
-        <Text style={s.muted}>The app requests background GPS updates about every 5 seconds. Android may delay updates to save battery.</Text>
-        {err?<Text style={s.err}>{err}</Text>:null}
-      </View>
-    </ScrollView>
-    <Modal visible={addOpen} transparent animationType="fade" onRequestClose={()=>setAddOpen(false)}>
-      <View style={s.modalBg}><View style={s.modal}>
-        <View style={s.rowBetween}><Text style={s.sectionTitle}>Add a friend</Text><TouchableOpacity onPress={()=>setAddOpen(false)}><Text style={s.close}>×</Text></TouchableOpacity></View>
-        <Text style={s.muted}>Enter their exact Location Tracker username.</Text>
-        <TextInput style={s.input} placeholder="Username" value={friendName} onChangeText={setFriendName} autoCapitalize="none" maxLength={32}/>
-        {addMsg?<Text style={addMsg==="Friend added!"?s.success:s.err}>{addMsg}</Text>:null}
-        <Btn t="Add friend" f={addFriend}/>
-      </View></View>
-    </Modal>
-  </SafeAreaView>;
-}
-function Btn({t,f}){return <TouchableOpacity style={s.btn} onPress={f}><Text style={s.bt}>{t}</Text></TouchableOpacity>}
+function Btn({text,on}){return <TouchableOpacity style={s.btn} onPress={on}><Text style={s.btnText}>{text}</Text></TouchableOpacity>}
 const s=StyleSheet.create({
-  safe:{flex:1,backgroundColor:"#f3f4f6"},content:{paddingBottom:30},auth:{flex:1,justifyContent:"center",padding:24,backgroundColor:"#f3f4f6"},authCreate:{padding:24,paddingBottom:40},
-  header:{padding:12,flexDirection:"row",justifyContent:"space-between",alignItems:"center"},title:{fontSize:26,fontWeight:"800"},subtitle:{fontSize:15,color:"#6b7280",marginBottom:14},
-  muted:{color:"#6b7280",paddingVertical:4},input:{backgroundColor:"#fff",borderWidth:1,borderColor:"#ddd",borderRadius:12,padding:14,marginVertical:7},
-  map:{height:380},card:{backgroundColor:"#fff",margin:10,padding:14,borderRadius:14},rowBetween:{flexDirection:"row",justifyContent:"space-between",alignItems:"center"},sectionTitle:{fontSize:20,fontWeight:"800"},
-  secondary:{backgroundColor:"#e5e7eb",paddingVertical:10,paddingHorizontal:12,borderRadius:10},secondaryText:{fontWeight:"800"},label:{fontWeight:"700",marginTop:14,marginBottom:5},
-  findRow:{paddingVertical:11,borderBottomWidth:1,borderBottomColor:"#eee"},friendRow:{flexDirection:"row",alignItems:"center",paddingVertical:12,borderBottomWidth:1,borderBottomColor:"#eee"},friendName:{fontSize:16,fontWeight:"700"},
-  small:{fontSize:12,color:"#6b7280"},online:{fontSize:12,color:"#15803d",marginTop:3},offline:{fontSize:12,color:"#6b7280",marginTop:3},friendButtons:{flexDirection:"row",gap:6},
-  smallBtn:{paddingVertical:8,paddingHorizontal:10,borderRadius:9,backgroundColor:"#e5e7eb"},smallBtnText:{fontWeight:"700"},removeBtn:{paddingVertical:8,paddingHorizontal:9,borderRadius:9,borderWidth:1,borderColor:"#ef4444"},removeText:{color:"#dc2626",fontWeight:"700"},
-  count:{fontSize:14,color:"#6b7280"},status:{fontWeight:"800",marginBottom:5},btn:{backgroundColor:"#111827",padding:15,borderRadius:12,marginVertical:8,alignItems:"center"},bt:{color:"#fff",fontWeight:"800"},
-  err:{color:"#b91c1c",paddingVertical:7},success:{color:"#15803d",paddingVertical:7},logout:{color:"#b91c1c",fontWeight:"700"},close:{fontSize:30,lineHeight:30},
-  modalBg:{flex:1,backgroundColor:"rgba(0,0,0,.45)",justifyContent:"center",padding:20},modal:{backgroundColor:"#fff",borderRadius:18,padding:18},
-  linkButton:{alignItems:"center",padding:10},link:{color:"#2563eb",fontWeight:"700"},policyBox:{backgroundColor:"#fff",borderWidth:1,borderColor:"#ddd",borderRadius:14,padding:14,marginBottom:12},
-  policyTitle:{fontSize:18,fontWeight:"800",marginBottom:6},policyText:{fontSize:13,color:"#374151",lineHeight:19,marginBottom:9},checkRow:{flexDirection:"row",alignItems:"flex-start",marginVertical:8},
-  checkbox:{width:25,height:25,borderWidth:2,borderColor:"#9ca3af",borderRadius:6,marginRight:10,alignItems:"center",justifyContent:"center"},checkboxChecked:{backgroundColor:"#111827",borderColor:"#111827"},
-  checkmark:{color:"#fff",fontWeight:"900",fontSize:17},checkText:{flex:1,fontSize:14,lineHeight:20,color:"#111827"}
+safe:{flex:1,backgroundColor:"#eaf7ff"},sosButton:{backgroundColor:"#dc2626",padding:17,borderRadius:14,marginTop:10,alignItems:"center"},sosText:{color:"#fff",fontWeight:"900",fontSize:18,letterSpacing:1},auth:{flex:1,justifyContent:"center",padding:24,backgroundColor:"#dff4ff"},authPage:{padding:24,paddingBottom:40},content:{paddingBottom:30},top:{padding:14,flexDirection:"row",justifyContent:"space-between",alignItems:"center"},topTitle:{fontSize:21,fontWeight:"900",color:"#0077b6"},title:{fontSize:28,fontWeight:"900",color:"#0077b6",textAlign:"center",marginTop:7},sub:{fontSize:15,color:"#47657e",lineHeight:21,textAlign:"center",marginBottom:14},input:{backgroundColor:"#fff",borderWidth:1,borderColor:"#b9d8ea",borderRadius:12,padding:14,marginVertical:7,color:"#0f2942"},btn:{backgroundColor:"#0ea5e9",padding:15,borderRadius:12,marginVertical:8,alignItems:"center"},btnText:{color:"#fff",fontWeight:"900"},link:{color:"#0284c7",fontWeight:"800",textAlign:"center",padding:10},outline:{borderWidth:2,borderColor:"#0ea5e9",padding:14,borderRadius:12,marginTop:8},outText:{color:"#0284c7",fontWeight:"900",textAlign:"center"},error:{color:"#b42318",paddingVertical:7,minHeight:24},back:{color:"#0284c7",fontWeight:"800",fontSize:16},policy:{backgroundColor:"#f5fbff",borderWidth:1,borderColor:"#b9d8ea",borderRadius:14,padding:14,marginVertical:8},policyTitle:{fontSize:18,fontWeight:"900",color:"#12334d",marginBottom:7},policyText:{fontSize:13,color:"#35556d",lineHeight:19,marginBottom:9},checkRow:{flexDirection:"row",alignItems:"flex-start",marginVertical:10},checkbox:{width:25,height:25,borderWidth:2,borderColor:"#82b8d3",borderRadius:6,marginRight:10,alignItems:"center",justifyContent:"center"},checked:{backgroundColor:"#0ea5e9",borderColor:"#0ea5e9"},check:{color:"#fff",fontWeight:"900",fontSize:17},checkText:{flex:1,fontSize:14,lineHeight:20,color:"#12334d"},map:{height:380,backgroundColor:"#dbeafe",overflow:"hidden",position:"relative"},mapPin:{position:"absolute",width:22,height:22,alignItems:"center",justifyContent:"center",zIndex:10},mapPinText:{fontSize:22,fontWeight:"900",color:"#ef4444",textShadowColor:"#fff",textShadowRadius:3},mapAttribution:{position:"absolute",right:2,bottom:2,backgroundColor:"rgba(255,255,255,.8)",paddingHorizontal:4,paddingVertical:2},mapAttributionText:{fontSize:9,color:"#334155"},card:{backgroundColor:"#fff",margin:10,padding:14,borderRadius:16,elevation:2},between:{flexDirection:"row",justifyContent:"space-between",alignItems:"center"},section:{fontSize:20,fontWeight:"900",color:"#0077b6"},muted:{color:"#5c7890",paddingVertical:4},secondary:{backgroundColor:"#cceeff",paddingVertical:10,paddingHorizontal:12,borderRadius:10},secondaryText:{fontWeight:"800",color:"#075985"},findRow:{paddingVertical:9,borderBottomWidth:1,borderBottomColor:"#e3f1f8"},label:{fontSize:16,fontWeight:"800",color:"#006bb3"},value:{color:"#2b78a8"},friendRow:{flexDirection:"row",alignItems:"center",paddingVertical:12,borderBottomWidth:1,borderBottomColor:"#e3f1f8"},online:{fontSize:12,color:"#059669",marginTop:3},remove:{padding:9,borderWidth:1,borderColor:"#efaaaa",borderRadius:9},removeText:{color:"#c24141",fontWeight:"700"},settingsButton:{width:44,height:44,borderRadius:22,backgroundColor:"#cceeff",alignItems:"center",justifyContent:"center"},settingsText:{fontSize:24,color:"#0369a1"},hero:{alignItems:"center",paddingVertical:8},accountName:{fontSize:24,fontWeight:"900",color:"#0f2942"},row:{flexDirection:"row",justifyContent:"space-between",alignItems:"center",paddingVertical:15,borderBottomWidth:1,borderBottomColor:"#e3f1f8"},arrow:{fontSize:26,color:"#0284c7"},bigBlue:{fontSize:42,fontWeight:"900",color:"#0077b6",paddingTop:8},drawerBg:{flex:1,backgroundColor:"rgba(4,35,55,.45)",justifyContent:"flex-start"},drawer:{width:"86%",maxWidth:380,backgroundColor:"#fff",padding:22,paddingTop:60,borderBottomRightRadius:24,borderTopRightRadius:24,minHeight:"100%"},drawerTitle:{fontSize:28,fontWeight:"900",color:"#0077b6"},drawerSub:{color:"#4b7ea3",marginBottom:14},menuItem:{paddingVertical:16,borderBottomWidth:1,borderBottomColor:"#e3f1f8"},menuText:{fontSize:17,fontWeight:"800",color:"#006bb3"},closeMenu:{marginTop:18,padding:14,borderRadius:12,backgroundColor:"#e0f4ff",alignItems:"center"},closeMenuText:{fontWeight:"900",color:"#0077b6"},codeBox:{backgroundColor:"#e0f7ff",borderWidth:1,borderColor:"#7dd3fc",borderRadius:14,padding:16,marginTop:12},codeLabel:{fontSize:11,fontWeight:"900",color:"#0369a1",letterSpacing:1},code:{fontSize:24,fontWeight:"900",letterSpacing:3,color:"#0f2942",marginVertical:9},success:{color:"#047857",paddingVertical:7},modalBg:{flex:1,backgroundColor:"rgba(4,35,55,.45)",justifyContent:"center",padding:20},modal:{backgroundColor:"#fff",borderRadius:18,padding:18},close:{fontSize:30,color:"#0f2942"},icon:{backgroundColor:"#062b55",alignSelf:"center",overflow:"hidden",position:"relative",marginBottom:8},map1:{position:"absolute",height:"22%",width:"130%",backgroundColor:"#1d8ed1",bottom:"-5%",left:"-15%",transform:[{rotate:"-12deg"}]},map2:{position:"absolute",height:"12%",width:"120%",backgroundColor:"#43c59e",bottom:"10%",left:"-10%",transform:[{rotate:"20deg"}]},ring:{position:"absolute",borderWidth:2,borderColor:"#b9ecff"},pin:{position:"absolute",backgroundColor:"#ff334d",transform:[{rotate:"45deg"}],alignItems:"center",justifyContent:"center",zIndex:3},pinHole:{backgroundColor:"#062b55",transform:[{rotate:"-45deg"}]},person:{position:"absolute",width:20,height:20,borderRadius:10,alignItems:"center",justifyContent:"center",zIndex:5},head:{width:6,height:6,borderRadius:3,backgroundColor:"#fff",position:"absolute",top:2},body:{width:11,height:6,borderRadius:3,backgroundColor:"#fff",position:"absolute",bottom:2}
 });
+class AppErrorBoundary extends React.Component{constructor(p){super(p);this.state={error:null}}static getDerivedStateFromError(error){return{error}}componentDidCatch(error,info){console.error("Location Tracker render error",error,info)}render(){if(this.state.error)return <SafeAreaView style={s.auth}><Icon size={90}/><Text style={s.title}>Something went wrong</Text><Text style={s.error}>{String(this.state.error?.message||this.state.error)}</Text><Btn text="Restart app" on={()=>this.setState({error:null})}/></SafeAreaView>;return this.props.children}}
+export default function Root(){return <AppErrorBoundary><App/></AppErrorBoundary>}
