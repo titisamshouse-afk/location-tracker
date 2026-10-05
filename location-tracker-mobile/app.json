@@ -2,7 +2,7 @@
   "expo": {
     "name": "Location Tracker",
     "slug": "location-tracker",
-    "version": "2.0.1",
+    "version": "2.1.0",
     "orientation": "default",
     "scheme": "locationtracker",
     "userInterfaceStyle": "automatic",
@@ -22,10 +22,7 @@
       "package": "com.titisamshouse.locationtracker",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION",
-        "FOREGROUND_SERVICE",
-        "FOREGROUND_SERVICE_LOCATION"
+        "ACCESS_FINE_LOCATION"
       ]
     },
     "description": "Location sharing, friends, maps, privacy consent, and recovery codes.",
