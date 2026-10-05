@@ -1,6 +1,6 @@
 {
   "name": "location-tracker-mobile",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "private": true,
   "main": "index.js",
   "scripts": {
@@ -14,9 +14,7 @@
     "expo": "~54.0.0",
     "expo-location": "~19.0.0",
     "expo-secure-store": "~14.2.0",
-    "expo-task-manager": "~14.0.0",
     "react": "19.1.0",
-    "react-native": "0.81.4",
-    "expo-battery": "~10.0.0"
+    "react-native": "0.81.4"
   }
 }
