@@ -400,7 +400,7 @@ async function refreshFriends() {
   $("friend-count").textContent = friends.length ? friends.length + " friend" + (friends.length === 1 ? "" : "s") : "";
 
   const oldIds = new Set(friendMarkers.keys());
-  const activeIds = new Set(friends.filter(f => f.latitude != null && f.longitude != null).map(f => f.id));
+  const activeIds = new Set(friends.filter(f => f.latitude != null && f.longitude != null && (settings.lastKnown || f.sharing)).map(f => f.id));
 
   for (const id of oldIds) {
     if (!activeIds.has(id)) {
@@ -410,7 +410,7 @@ async function refreshFriends() {
   }
 
   for (const friend of friends) {
-    if (friend.latitude != null && friend.longitude != null) {
+    if (friend.latitude != null && friend.longitude != null && (settings.lastKnown || friend.sharing)) {
       let marker = friendMarkers.get(friend.id);
       if (!marker) {
         marker = L.marker([friend.latitude, friend.longitude]).addTo(map);
