@@ -15,7 +15,7 @@
       <h1>Location Tracker</h1>
       <div id="account" class="top-subtitle"></div>
     </div>
-    <button id="out" class="small">Log out</button>
+    <div class="top-actions"><button id="settings-open" class="small" aria-label="Open settings">⚙️ Settings</button><button id="out" class="small">Log out</button></div>
   </header>
 
   <div id="map"></div>
@@ -73,7 +73,65 @@
       <div class="empty">Add a friend by username to see their location here.</div>
     </div>
   </section>
+
+  <section class="panel sos-panel">
+    <div class="find-head">
+      <div>
+        <h2>🆘 Emergency SOS</h2>
+        <div class="muted">Send your current location to your active friends.</div>
+      </div>
+      <button id="sos-send" class="sos-btn">SEND SOS</button>
+    </div>
+    <div id="sos-status" class="muted"></div>
+  </section>
 </main>
+
+<div id="settings-dialog" class="dialog hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+  <div class="dialog-card settings-card">
+    <div class="dialog-head">
+      <h2 id="settings-title">Settings</h2>
+      <button id="settings-close" class="icon-btn" aria-label="Close">×</button>
+    </div>
+
+    <div class="settings-section">
+      <h3>Appearance</h3>
+      <label class="setting-row"><span><b>Theme</b><small>Choose how the app looks.</small></span>
+        <select id="setting-theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
+      </label>
+      <label class="setting-row"><span><b>Compact layout</b><small>Use tighter spacing on smaller screens.</small></span><input id="setting-compact" type="checkbox"></label>
+    </div>
+
+    <div class="settings-section">
+      <h3>Map & Location</h3>
+      <label class="setting-row"><span><b>Map zoom</b><small>Zoom level used when opening a location.</small></span><select id="setting-zoom"><option value="14">14</option><option value="16">16</option><option value="17">17</option><option value="18">18</option></select></label>
+      <label class="setting-row"><span><b>Refresh friends automatically</b><small>Keep friend locations/status current.</small></span><input id="setting-refresh" type="checkbox"></label>
+      <label class="setting-row"><span><b>Remember map position</b><small>Keep your last map view on this device.</small></span><input id="setting-remember-map" type="checkbox"></label>
+    </div>
+
+    <div class="settings-section">
+      <h3>Friends</h3>
+      <label class="setting-row"><span><b>Confirm before removing</b><small>Ask before deleting a friend connection.</small></span><input id="setting-confirm-remove" type="checkbox"></label>
+      <label class="setting-row"><span><b>Show last-known locations</b><small>Keep a friend's last location visible when they stop sharing.</small></span><input id="setting-last-known" type="checkbox"></label>
+    </div>
+
+    <div class="settings-section">
+      <h3>SOS & Alerts</h3>
+      <label class="setting-row"><span><b>Confirm SOS</b><small>Require a confirmation before sending an emergency alert.</small></span><input id="setting-confirm-sos" type="checkbox"></label>
+      <label class="setting-row"><span><b>SOS sound</b><small>Play a short alert sound after an SOS is sent.</small></span><input id="setting-sos-sound" type="checkbox"></label>
+      <label class="setting-row"><span><b>Vibration</b><small>Use device vibration when supported.</small></span><input id="setting-vibrate" type="checkbox"></label>
+    </div>
+
+    <div class="settings-section">
+      <h3>Privacy & Account</h3>
+      <button id="settings-permissions" class="setting-button">📍 Check location permission</button>
+      <button id="settings-privacy" class="setting-button">🔒 Privacy information</button>
+      <button id="settings-password" class="setting-button">🔑 Change password</button>
+      <button id="settings-reset" class="setting-button danger-setting">↩ Reset app settings</button>
+    </div>
+
+    <div id="settings-message" class="muted"></div>
+  </div>
+</div>
 
 <div id="friend-dialog" class="dialog hidden" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
   <div class="dialog-card">
@@ -416,8 +474,9 @@ async function refreshFriends() {
     };
 
     const remove = document.createElement("button");
-    remove.className = "small danger-outline";
+    remove.className = "small danger-outline friend-remove";
     remove.textContent = "Remove";
+    remove.setAttribute("aria-label", "Remove " + friend.username);
     remove.onclick = () => removeFriend(friend.id, friend.username);
 
     buttons.append(center, remove);
@@ -427,7 +486,7 @@ async function refreshFriends() {
 }
 
 async function removeFriend(friendId, friendUsername) {
-  if (!confirm("Remove " + friendUsername + " from your friends?")) return;
+  if (settings.confirmRemove && !confirm("Remove " + friendUsername + " from your friends?")) return;
 
   const { error } = await supabase.rpc("remove_friend", {
     p_token: token,
@@ -497,6 +556,123 @@ $("out").onclick = async () => {
   location.replace("login.html");
 };
 
+
+const DEFAULT_SETTINGS = {
+  theme: "system", compact: false, zoom: 16, refresh: true,
+  rememberMap: true, confirmRemove: true, lastKnown: true,
+  confirmSos: true, sosSound: true, vibrate: true
+};
+let settings = {...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem("lt_settings") || "{}")};
+
+function saveSettings() {
+  localStorage.setItem("lt_settings", JSON.stringify(settings));
+}
+
+function applyTheme() {
+  const theme = settings.theme === "system"
+    ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+    : settings.theme;
+  document.documentElement.dataset.theme = theme;
+  $("setting-theme").value = settings.theme;
+}
+
+function applySettingsToUI() {
+  $("setting-compact").checked = settings.compact;
+  $("setting-zoom").value = String(settings.zoom);
+  $("setting-refresh").checked = settings.refresh;
+  $("setting-remember-map").checked = settings.rememberMap;
+  $("setting-confirm-remove").checked = settings.confirmRemove;
+  $("setting-last-known").checked = settings.lastKnown;
+  $("setting-confirm-sos").checked = settings.confirmSos;
+  $("setting-sos-sound").checked = settings.sosSound;
+  $("setting-vibrate").checked = settings.vibrate;
+  document.documentElement.classList.toggle("compact-mode", settings.compact);
+  applyTheme();
+}
+
+function openSettings() {
+  applySettingsToUI();
+  $("settings-dialog").classList.remove("hidden");
+}
+
+function closeSettings() {
+  $("settings-dialog").classList.add("hidden");
+}
+
+function playSosSound() {
+  if (!settings.sosSound) return;
+  try {
+    audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioContext.createOscillator(), g = audioContext.createGain();
+    o.frequency.value = 700; g.gain.value = 0.12;
+    o.connect(g); g.connect(audioContext.destination);
+    o.start(); o.stop(audioContext.currentTime + 0.35);
+  } catch {}
+}
+
+async function sendSOS() {
+  if (settings.confirmSos && !confirm("Send an emergency SOS with your current location to your active friends?")) return;
+  const status = $("sos-status");
+  status.textContent = "Getting your current location…";
+  const send = async (lat, lng, accuracy) => {
+    const { error } = await supabase.rpc("create_sos_event", {
+      p_token: token, p_latitude: lat, p_longitude: lng, p_accuracy: accuracy
+    });
+    if (error) {
+      status.textContent = "SOS failed: " + error.message;
+      return;
+    }
+    status.textContent = "SOS sent with your current location.";
+    if (settings.vibrate && navigator.vibrate) navigator.vibrate([180, 100, 180]);
+    playSosSound();
+  };
+  if (!navigator.geolocation) {
+    status.textContent = "Location is unavailable on this device.";
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    p => send(p.coords.latitude, p.coords.longitude, p.coords.accuracy),
+    e => status.textContent = "SOS could not get your location: " + e.message,
+    {enableHighAccuracy:true, maximumAge:5000, timeout:15000}
+  );
+}
+
+function bindSettings() {
+  $("settings-open").onclick = openSettings;
+  $("settings-close").onclick = closeSettings;
+  $("settings-dialog").onclick = e => { if (e.target === $("settings-dialog")) closeSettings(); };
+
+  $("setting-theme").onchange = e => { settings.theme = e.target.value; saveSettings(); applyTheme(); };
+  $("setting-compact").onchange = e => { settings.compact = e.target.checked; saveSettings(); applySettingsToUI(); };
+  $("setting-zoom").onchange = e => { settings.zoom = Number(e.target.value); saveSettings(); };
+  $("setting-refresh").onchange = e => { settings.refresh = e.target.checked; saveSettings(); if (settings.refresh && !refreshTimer) refreshTimer = setInterval(refreshFriends, 10000); if (!settings.refresh && refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; } };
+  $("setting-remember-map").onchange = e => { settings.rememberMap = e.target.checked; saveSettings(); };
+  $("setting-confirm-remove").onchange = e => { settings.confirmRemove = e.target.checked; saveSettings(); };
+  $("setting-last-known").onchange = e => { settings.lastKnown = e.target.checked; saveSettings(); refreshFriends(); };
+  $("setting-confirm-sos").onchange = e => { settings.confirmSos = e.target.checked; saveSettings(); };
+  $("setting-sos-sound").onchange = e => { settings.sosSound = e.target.checked; saveSettings(); };
+  $("setting-vibrate").onchange = e => { settings.vibrate = e.target.checked; saveSettings(); };
+
+  $("settings-permissions").onclick = () => {
+    if (!navigator.geolocation) return $("settings-message").textContent = "This device does not expose location services to the browser.";
+    navigator.geolocation.getCurrentPosition(
+      () => $("settings-message").textContent = "Location permission is working.",
+      e => $("settings-message").textContent = "Location permission/status: " + e.message
+    );
+  };
+  $("settings-privacy").onclick = () => alert("Location Tracker only sends your location when you use location sharing or an SOS feature. Friend locations are shown according to your account's sharing status.");
+  $("settings-password").onclick = () => location.href = "account.html";
+  $("settings-reset").onclick = () => {
+    if (!confirm("Reset your Location Tracker app settings?")) return;
+    settings = {...DEFAULT_SETTINGS};
+    saveSettings();
+    applySettingsToUI();
+    $("settings-message").textContent = "App settings reset.";
+  };
+  $("sos-send").onclick = sendSOS;
+  applySettingsToUI();
+}
+
 async function init() {
   if (!(await checkSession())) return;
 
@@ -507,7 +683,8 @@ async function init() {
   }
 
   await refreshFriends();
-  refreshTimer = setInterval(refreshFriends, 10000);
+  if (settings.refresh) refreshTimer = setInterval(refreshFriends, 10000);
+  bindSettings();
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
