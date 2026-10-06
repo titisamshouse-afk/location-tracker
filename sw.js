@@ -1,4 +1,4 @@
-const CACHE="lt-v2";
+const CACHE="lt-v3";
 const ASSETS=["./login.html","./create-account.html","./app.html","./style.css","./manifest.json"];
 
 self.addEventListener("install",event=>{
