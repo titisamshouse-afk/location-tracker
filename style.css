@@ -164,3 +164,18 @@ html[data-theme="dark"] .ota-section,html[data-theme="dark"] .ota-section detail
 
 /* OTA friend categories */
 #friend-tags-section{margin-top:12px}.tag-filter{display:flex;gap:7px;overflow:auto;padding:4px 0 10px}.tag-filter-button{border:1px solid #d1d5db;background:#fff;border-radius:999px;padding:8px 11px;white-space:nowrap;font-weight:700}.tag-filter-button.active{background:#eff6ff;border-color:#93c5fd}.friend-tag-item{border:1px solid #e5e7eb;border-radius:14px;padding:12px;margin:8px 0}.friend-tag-head{display:grid;gap:7px}.friend-tag-chips{display:flex;flex-wrap:wrap;gap:5px}.friend-tag-chip{display:inline-flex;align-items:center;border-radius:999px;background:#eef2ff;padding:5px 8px;font-size:12px;font-weight:700}.friend-tag-controls{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}.friend-tag-controls .small{padding:7px 9px}html[data-theme="dark"] .tag-filter-button{background:#172033;color:#f3f4f6;border-color:#374151}html[data-theme="dark"] .tag-filter-button.active{background:#172b4d;border-color:#2563eb}html[data-theme="dark"] .friend-tag-item{border-color:#374151}html[data-theme="dark"] .friend-tag-chip{background:#26334a}
+
+/* Favorite chats */
+.favorite-chats-card{margin-top:18px;border:1px solid #dbe3f0;border-radius:16px;padding:14px;background:#fff}
+.favorite-chats-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.favorite-chats-head h2{font-size:17px;margin:0 0 3px}
+.favorite-chats-list{display:grid;gap:7px}
+.favorite-chat-row{display:flex;align-items:center;gap:8px;border:1px solid #e5e7eb;border-radius:12px;background:#f8fbff;padding:7px}
+.favorite-chat-open{flex:1;border:0;background:transparent;text-align:left;padding:8px;font-weight:700;color:inherit;min-width:0}
+.favorite-star-btn{border:1px solid #d1d5db;background:#fff;color:#6b7280;border-radius:10px;width:44px;height:42px;font-size:25px;line-height:1}
+.favorite-star-btn.active{color:#f59e0b;border-color:#fbbf24;background:#fffbeb}
+.chat-tools .favorite-star-btn{flex:0 0 44px}
+html[data-theme="dark"] .favorite-chats-card{background:#111827;border-color:#374151}
+html[data-theme="dark"] .favorite-chat-row{background:#172033;border-color:#374151}
+html[data-theme="dark"] .favorite-star-btn{background:#172033;color:#9ca3af;border-color:#374151}
+html[data-theme="dark"] .favorite-star-btn.active{color:#fbbf24;background:#3a2d14;border-color:#b7791f}
