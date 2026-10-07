@@ -246,7 +246,7 @@
         <button id="ota-clear-pins" class="secondary">🗑 Clear my pins</button>
       </div>
       <div id="ota-pins-list" class="hub-list"></div>
-      <div id="ota-distance" class="privacy-card">Choose a friend with a location to see distance and direction.</div>
+      <button id="ota-distance-button" class="setting-button">📏 Calculate distance & direction</button><div id="ota-distance" class="privacy-card">Choose a friend with a location to see distance and direction.</div>
     </div>
 
     <div class="ota-section" id="ota-profile-section">
@@ -1048,7 +1048,7 @@ function otaBind(){
   $("ota-group-form").onsubmit=async e=>{e.preventDefault();try{const ids=otaFriends().map(x=>x.id);await trackitApi.rpc("trackit_create_group",{p_token:token,p_name:$( "ota-group-name").value.trim(),p_friend_ids:ids});$( "ota-group-name").value="";otaRenderGroups();}catch(err){alert(err.message);}};
   $("ota-device-refresh").onclick=otaRenderDevice;
   $("ota-history-clear").onclick=()=>{if(confirm("Clear your local location history?")){otaWrite(OTA_HISTORY_KEY,[]);otaRenderHistory();}};
-  $("ota-drop-pin").onclick=otaDropPin;$("ota-clear-pins").onclick=otaClearPins;
+  $("ota-drop-pin").onclick=otaDropPin;$("ota-clear-pins").onclick=otaClearPins;$("ota-distance-button").onclick=otaDistanceToFriend;
   $("ota-map-search-form").onsubmit=e=>{e.preventDefault();const q=$( "ota-map-search").value.trim();if(q)otaMapSearch(q);};
   $("ota-avatar-input").onchange=e=>{const file=e.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{localStorage.setItem("trackit_profile_pic",reader.result);otaRenderProfile();};reader.readAsDataURL(file);};
   $("ota-avatar-clear").onclick=()=>{localStorage.removeItem("trackit_profile_pic");otaRenderProfile();};
