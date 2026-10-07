@@ -18,6 +18,65 @@
     <div class="top-actions"><button id="settings-open" class="small" aria-label="Open settings">⚙️ Settings</button><button id="out" class="small">Log out</button></div>
   </header>
 
+
+  <div id="tab-pages">
+    <section id="tab-home" class="tab-page">
+      <div class="panel home-panel">
+        <div class="home-welcome">
+          <div class="home-icon">📍</div>
+          <div>
+            <h2>Welcome to Trackit</h2>
+            <div class="muted">Stay connected with your friends, location, and safety tools.</div>
+          </div>
+        </div>
+        <div class="home-grid">
+          <button class="home-action" data-go-tab="location"><span>📍</span><b>Location</b><small>Find friends and share your location</small></button>
+          <button class="home-action" data-go-tab="chat"><span>💬</span><b>Chat</b><small>Message your friends</small></button>
+          <button class="home-action sos-home-action" data-go-tab="sos"><span>🆘</span><b>SOS</b><small>Send an emergency alert</small></button>
+          <button class="home-action" data-go-tab="account"><span>👤</span><b>Account</b><small>Settings and preferences</small></button>
+        </div>
+      </div>
+    </section>
+    <section id="tab-location" class="tab-page"></section>
+    <section id="tab-chat" class="tab-page">
+      <div class="panel">
+        <div class="find-head">
+          <div><h2>💬 Chat</h2><div class="muted">Message one of your Trackit friends.</div></div>
+        </div>
+        <div class="chat-tools">
+          <select id="app-chat-friend"><option value="">Choose a friend…</option></select>
+          <button id="app-chat-open" class="secondary">Open chat</button>
+        </div>
+        <div id="app-chat-title" class="chat-title muted">Choose a friend to start chatting.</div>
+        <div id="app-chat-messages" class="chat-messages"><div class="empty">Your messages will appear here.</div></div>
+        <form id="app-chat-form" class="chat-form hidden">
+          <input id="app-chat-input" maxlength="2000" placeholder="Type a message…" autocomplete="off">
+          <button class="btn">Send</button>
+        </form>
+        <div id="app-chat-status" class="muted"></div>
+      </div>
+    </section>
+    <section id="tab-sos" class="tab-page"></section>
+    <section id="tab-account" class="tab-page">
+      <div class="panel account-panel">
+        <div class="account-card">
+          <div class="account-avatar">👤</div>
+          <div><h2 id="account-tab-name">Account</h2><div id="account-tab-sub" class="muted">Signed in</div></div>
+        </div>
+        <button id="account-settings-button" class="account-menu-button">⚙️ Settings <span>›</span></button>
+        <button id="account-logout-button" class="account-menu-button danger-account">↪️ Log out <span>›</span></button>
+      </div>
+    </section>
+  </div>
+
+  <nav id="trackit-bottom-nav" class="bottom-nav" aria-label="Trackit navigation">
+    <button class="bottom-tab active" data-tab="home"><span>⌂</span><b>Home</b></button>
+    <button class="bottom-tab" data-tab="chat"><span>💬</span><b>Chat</b></button>
+    <button class="bottom-tab bottom-sos" data-tab="sos"><span>🆘</span><b>SOS</b></button>
+    <button class="bottom-tab" data-tab="location"><span>📍</span><b>Location</b></button>
+    <button class="bottom-tab" data-tab="account"><span>👤</span><b>Account</b></button>
+  </nav>
+
   <div id="map"></div>
 
   <section class="panel find-panel">
@@ -814,7 +873,109 @@ function bindTrackitFeatures(){
   $( "privacy-pause").onclick=()=>stopSharing().then(()=>$( "privacy-message").textContent="Location sharing paused.");
   $( "privacy-info").onclick=()=>alert("Trackit shares your location only when you start sharing or send an SOS. Friends only see locations through an active friend connection. You can stop sharing at any time.");
 }
-\nasync function loadTrackitVersion(){try{const r=await fetch("trackit-version.json?"+Date.now());const v=await r.json();const label="Trackit "+v.version;$("trackit-version").textContent=label+" • OTA";const sv=$("settings-version");if(sv)sv.textContent=label;}catch{}}\n\nasync function init() {
+\nasync function loadTrackitVersion(){try{const r=await fetch("trackit-version.json?"+Date.now());const v=await r.json();const label="Trackit "+v.version;$("trackit-version").textContent=label+" • OTA";const sv=$("settings-version");if(sv)sv.textContent=label;}catch{}}\n\n
+function setupAppNavigation() {
+  const pages = {
+    home: $("tab-home"),
+    location: $("tab-location"),
+    chat: $("tab-chat"),
+    sos: $("tab-sos"),
+    account: $("tab-account")
+  };
+  const mapEl = $("map");
+  const findPanel = document.querySelector(".find-panel");
+  const headphonesPanel = document.querySelector(".headphones-panel");
+  const mainPanel = [...document.querySelectorAll(".panel")].find(p => p.querySelector("#st"));
+  const sosPanel = document.querySelector(".sos-panel");
+
+  if (findPanel) pages.location.appendChild(findPanel);
+  if (headphonesPanel) pages.location.appendChild(headphonesPanel);
+  if (mainPanel) pages.location.appendChild(mainPanel);
+  if (mapEl) pages.location.prepend(mapEl);
+  if (sosPanel) pages.sos.appendChild(sosPanel);
+
+  function switchTab(name) {
+    Object.entries(pages).forEach(([key, page]) => page.classList.toggle("hidden", key !== name));
+    document.querySelectorAll(".bottom-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
+    if (name === "location" && window.map) setTimeout(() => map.invalidateSize(), 50);
+    if (name === "chat") loadAppChatFriends();
+    if (name === "account") {
+      $("account-tab-name").textContent = username || "Account";
+      $("account-tab-sub").textContent = username ? "Signed in as " + username : "Signed in";
+    }
+  }
+
+  document.querySelectorAll(".bottom-tab").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+  document.querySelectorAll("[data-go-tab]").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.goTab)));
+  $("account-settings-button").onclick = openSettings;
+  $("account-logout-button").onclick = () => $("out").click();
+
+  async function loadAppChatFriends() {
+    const select = $("app-chat-friend");
+    const old = select.value;
+    select.innerHTML = '<option value="">Choose a friend…</option>';
+    const source = $("find-friend");
+    if (source) [...source.options].slice(1).forEach(o => select.appendChild(o.cloneNode(true)));
+    if ([...select.options].some(o => o.value === old)) select.value = old;
+  }
+
+  let appChatConversationId = null;
+  $("app-chat-open").onclick = async () => {
+    const friendId = $("app-chat-friend").value;
+    if (!friendId) {
+      $("app-chat-status").textContent = "Choose a friend first.";
+      return;
+    }
+    try {
+      const data = await trackitApi.rpc("trackit_get_direct_conversation", {p_token: token, p_friend_id: friendId});
+      appChatConversationId = data.conversation_id;
+      $("app-chat-title").textContent = "Chat with " + ($("app-chat-friend").selectedOptions[0]?.textContent || "Friend");
+      $("app-chat-form").classList.remove("hidden");
+      await loadAppMessages();
+    } catch (e) {
+      $("app-chat-status").textContent = e.message;
+    }
+  };
+
+  async function loadAppMessages() {
+    if (!appChatConversationId) return;
+    try {
+      const rows = (await trackitApi.rpc("trackit_list_messages", {p_token: token, p_conversation_id: appChatConversationId, p_limit: 100}) || []).reverse();
+      const box = $("app-chat-messages");
+      box.innerHTML = "";
+      if (!rows.length) {
+        box.innerHTML = '<div class="empty">No messages yet. Say hello!</div>';
+        return;
+      }
+      rows.forEach(m => {
+        const row = document.createElement("div");
+        row.className = "message " + (m.sender_username === username ? "mine" : "");
+        row.innerHTML = "<b>" + escapeHtml(m.sender_username) + "</b><span>" + escapeHtml(m.body) + "</span><small>" + new Date(m.created_at).toLocaleString() + "</small>";
+        box.appendChild(row);
+      });
+      box.scrollTop = box.scrollHeight;
+    } catch (e) {
+      $("app-chat-status").textContent = e.message;
+    }
+  }
+
+  $("app-chat-form").onsubmit = async e => {
+    e.preventDefault();
+    const body = $("app-chat-input").value.trim();
+    if (!body || !appChatConversationId) return;
+    try {
+      await trackitApi.rpc("trackit_send_message", {p_token: token, p_conversation_id: appChatConversationId, p_body: body});
+      $("app-chat-input").value = "";
+      await loadAppMessages();
+    } catch (err) {
+      $("app-chat-status").textContent = err.message;
+    }
+  };
+
+  switchTab("home");
+}
+
+async function init() {
   if (!(await checkSession())) return;
 
   const { data } = await supabase.rpc("my_location_status", { p_token: token });
@@ -825,7 +986,9 @@ function bindTrackitFeatures(){
 
   await refreshFriends();
   if (settings.refresh) refreshTimer = setInterval(refreshFriends, 10000);
-  bindSettings();\n  loadNotifications();\n  loadTrackitVersion();
+  bindSettings();
+  setupAppNavigation();
+  loadNotifications();\n  loadTrackitVersion();
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
