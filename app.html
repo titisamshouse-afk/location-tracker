@@ -35,6 +35,15 @@
           <button class="home-action sos-home-action" data-go-tab="sos"><span>🆘</span><b>SOS</b><small>Send an emergency alert</small></button>
           <button class="home-action" data-go-tab="account"><span>👤</span><b>Account</b><small>Settings and preferences</small></button>
         </div>
+        <div class="favorite-chats-card">
+          <div class="favorite-chats-head">
+            <div><h2>⭐ Favorite Chats</h2><div class="muted">Your favorite friends and chat groups.</div></div>
+            <button id="favorite-chats-manage" class="secondary">Manage</button>
+          </div>
+          <div id="favorite-chats-list" class="favorite-chats-list">
+            <div class="empty">Star a chat to add it here.</div>
+          </div>
+        </div>
       </div>
     </section>
     <section id="tab-location" class="tab-page"></section>
@@ -46,6 +55,7 @@
         <div class="chat-tools">
           <select id="app-chat-friend"><option value="">Choose a friend…</option></select>
           <button id="app-chat-open" class="secondary">Open chat</button>
+          <button id="app-chat-favorite" class="favorite-star-btn" type="button" aria-label="Favorite chat" title="Favorite chat">☆</button>
         </div>
         <div id="app-chat-title" class="chat-title muted">Choose a friend to start chatting.</div>
         <div id="app-chat-messages" class="chat-messages"><div class="empty">Your messages will appear here.</div></div>
@@ -1068,6 +1078,43 @@ function otaRecordPosition(position){otaSaveHistory(position.coords);}
 
 
 
+/* Trackit favorite chats */
+const FAVORITE_CHATS_KEY="trackit_favorite_chats_v1";
+function getFavoriteChats(){return otaRead(FAVORITE_CHATS_KEY,[]);}
+function saveFavoriteChats(x){otaWrite(FAVORITE_CHATS_KEY,x);}
+function isFavoriteChat(id){return getFavoriteChats().some(x=>String(x.id)===String(id));}
+function toggleFavoriteChat(friend){
+  if(!friend?.id)return;
+  const list=getFavoriteChats();
+  const i=list.findIndex(x=>String(x.id)===String(friend.id));
+  if(i>=0)list.splice(i,1);
+  else list.push({id:friend.id,label:friend.label});
+  saveFavoriteChats(list);
+  renderFavoriteChats();
+  updateChatFavoriteButton();
+}
+function renderFavoriteChats(){
+  const box=$( "favorite-chats-list");if(!box)return;
+  const list=getFavoriteChats();
+  box.innerHTML="";
+  if(!list.length){box.innerHTML='<div class="empty">Star a chat to add it here.</div>';return;}
+  list.forEach(f=>{
+    const row=document.createElement("div");row.className="favorite-chat-row";
+    const name=document.createElement("button");name.className="favorite-chat-open";name.textContent="💬 "+f.label.split(" • ")[0];
+    name.onclick=()=>{setupAppNavigationSwitchToChat?.(f.id);};
+    const star=document.createElement("button");star.className="favorite-star-btn active";star.textContent="★";star.title="Remove from favorites";star.setAttribute("aria-label","Remove from favorites");
+    star.onclick=()=>{toggleFavoriteChat(f);};
+    row.append(name,star);box.append(row);
+  });
+}
+function updateChatFavoriteButton(){
+  const b=$( "app-chat-favorite"),id=$( "app-chat-friend")?.value;
+  if(!b)return;
+  const on=id&&isFavoriteChat(id);
+  b.textContent=on?"★":"☆";b.classList.toggle("active",!!on);
+  b.title=on?"Remove favorite":"Favorite chat";
+}
+
 /* Trackit OTA friend categories/tags */
 const FRIEND_TAGS_KEY="trackit_friend_tags_v1";
 const FRIEND_TAGS=[{id:"family",name:"Family",icon:"👨‍👩‍👧‍👦"},{id:"friends",name:"Friends",icon:"👥"},{id:"best-friend",name:"Best Friend",icon:"💙"}];
@@ -1103,6 +1150,7 @@ function setupAppNavigation() {
     document.querySelectorAll(".bottom-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
     if (name === "location") setTimeout(() => map.invalidateSize(), 50);
     if (name === "chat") loadAppChatFriends();
+    if (name === "home") renderFavoriteChats();
     if (name === "account") {
       $("account-tab-name").textContent = username || "Account";
       $("account-tab-sub").textContent = username ? "Signed in as " + username : "Signed in";
@@ -1111,6 +1159,11 @@ function setupAppNavigation() {
 
   document.querySelectorAll(".bottom-tab").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
   document.querySelectorAll("[data-go-tab]").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.goTab)));
+  window.setupAppNavigationSwitchToChat = (friendId) => {
+    switchTab("chat");
+    const select=$( "app-chat-friend");
+    if(select){select.value=String(friendId);select.dispatchEvent(new Event("change"));}
+  };
   $("account-settings-button").onclick = openSettings;
   otaBindFriendTags();
   $("account-logout-button").onclick = () => $("out").click();
@@ -1122,6 +1175,7 @@ function setupAppNavigation() {
     const source = $("find-friend");
     if (source) [...source.options].slice(1).forEach(o => select.appendChild(o.cloneNode(true)));
     if ([...select.options].some(o => o.value === old)) select.value = old;
+    updateChatFavoriteButton();
   }
 
   let appChatConversationId = null;
@@ -1177,6 +1231,7 @@ function setupAppNavigation() {
     }
   };
 
+  renderFavoriteChats();
   switchTab("home");
 }
 
