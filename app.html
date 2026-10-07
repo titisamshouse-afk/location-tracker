@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#111827">
-  <title>Location Tracker</title>
+  <title>Trackit</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
@@ -12,7 +12,7 @@
 <main class="app">
   <header class="top">
     <div>
-      <h1>Location Tracker</h1>
+      <h1>Trackit</h1>
       <div id="account" class="top-subtitle"></div>
     </div>
     <div class="top-actions"><button id="settings-open" class="small" aria-label="Open settings">⚙️ Settings</button><button id="out" class="small">Log out</button></div>
@@ -145,7 +145,7 @@
       <h2 id="dialog-title">Add a friend</h2>
       <button id="close-dialog" class="icon-btn" aria-label="Close">×</button>
     </div>
-    <p class="muted">Enter their exact Location Tracker username.</p>
+    <p class="muted">Enter their exact Trackit username.</p>
     <form id="friend-form">
       <div class="field">
         <label for="friend-username">Username</label>
@@ -666,10 +666,10 @@ function bindSettings() {
       e => $("settings-message").textContent = "Location permission/status: " + e.message
     );
   };
-  $("settings-privacy").onclick = () => alert("Location Tracker only sends your location when you use location sharing or an SOS feature. Friend locations are shown according to your account's sharing status.");
+  $("settings-privacy").onclick = () => alert("Trackit only sends your location when you use location sharing or an SOS feature. Friend locations are shown according to your account's sharing status.");
   $("settings-password").onclick = () => location.href = "account.html";
   $("settings-reset").onclick = () => {
-    if (!confirm("Reset your Location Tracker app settings?")) return;
+    if (!confirm("Reset your Trackit app settings?")) return;
     settings = {...DEFAULT_SETTINGS};
     saveSettings();
     applySettingsToUI();
@@ -679,7 +679,126 @@ function bindSettings() {
   applySettingsToUI();
 }
 
-async function init() {
+
+const trackitApi = {
+  async rpc(fn,args={}) {
+    const {data,error}=await supabase.rpc(fn,args);
+    if(error) throw error;
+    return data;
+  }
+};
+let activeConversationId=null;
+
+function showHub(name){
+  document.querySelectorAll(".hub-page").forEach(x=>x.classList.add("hidden"));
+  document.querySelectorAll(".hub-tab").forEach(x=>x.classList.toggle("active",x.dataset.hub===name));
+  const page=$( "hub-"+name ); if(page) page.classList.remove("hidden");
+  const loaders={safety:loadSafety,chat:loadChatFriends,groups:loadGroups,places:loadPlaces,meetups:loadMeetups,activity:loadActivity,notifications:loadNotifications,status:loadDeviceStatus};
+  if(loaders[name]) loaders[name]();
+}
+async function sendSafetyStatus(label){
+  try{
+    await trackitApi.rpc("trackit_add_activity",{p_account:null,p_kind:"",p_text:""});
+  }catch{}
+  const s=$( "safety-message" ); s.textContent="Sharing safety status: "+label;
+  try{
+    const {data}=await supabase.rpc("trackit_list_notifications",{p_token:token});
+    s.textContent="Status set to “"+label+"”. Your activity is recorded in Trackit.";
+  }catch{}
+}
+async function loadSafety(){
+  try{
+    const rows=await trackitApi.rpc("trackit_list_safety_timers",{p_token:token})||[];
+    const list=$( "safety-timers" ); list.innerHTML="";
+    if(!rows.length){list.innerHTML='<div class="empty">No active timers.</div>';return;}
+    rows.forEach(t=>{
+      const row=document.createElement("div"); row.className="hub-row";
+      const left=document.createElement("div"); left.innerHTML="<b>"+escapeHtml(t.label)+"</b><small>"+new Date(t.expires_at).toLocaleString()+"</small>";
+      const b=document.createElement("button"); b.className="small secondary"; b.textContent="Check in"; b.onclick=async()=>{await trackitApi.rpc("trackit_complete_safety_timer",{p_token:token,p_id:t.id});loadSafety();};
+      row.append(left,b);list.append(row);
+    });
+  }catch(e){$( "safety-message").textContent=e.message;}
+}
+function escapeHtml(v){const d=document.createElement("div");d.textContent=v??"";return d.innerHTML;}
+function fillChatFriends(){
+  const s=$( "chat-friend" ); s.innerHTML='<option value="">Choose a friend…</option>';
+  [...document.querySelectorAll(".friend-row")].forEach(()=>{});
+  const select=$( "find-friend" );
+  [...select.options].slice(1).forEach(o=>{const n=o.cloneNode(true);s.append(n);});
+}
+async function openChat(){
+  const friendId=$( "chat-friend").value;if(!friendId)return;
+  try{
+    const data=await trackitApi.rpc("trackit_get_direct_conversation",{p_token:token,p_friend_id:friendId});
+    activeConversationId=data.conversation_id;
+    const friendName=$( "chat-friend").selectedOptions[0]?.textContent||"Friend";
+    $( "chat-title").textContent="Chat with "+friendName;
+    $( "chat-form").classList.remove("hidden");
+    await loadMessages();
+  }catch(e){$( "chat-title").textContent=e.message;}
+}
+async function loadMessages(){
+  if(!activeConversationId)return;
+  const rows=(await trackitApi.rpc("trackit_list_messages",{p_token:token,p_conversation_id:activeConversationId,p_limit:100})||[]).reverse();
+  const box=$( "chat-messages");box.innerHTML="";
+  if(!rows.length){box.innerHTML='<div class="empty">No messages yet. Say hello!</div>';return;}
+  rows.forEach(m=>{const row=document.createElement("div");row.className="message "+(m.sender_id===localStorage.getItem("lt_account_id")?"mine":"");row.innerHTML="<b>"+escapeHtml(m.sender_username)+"</b><span>"+escapeHtml(m.body)+"</span><small>"+new Date(m.created_at).toLocaleString()+"</small>";box.append(row);});
+  box.scrollTop=box.scrollHeight;
+}
+async function loadChatFriends(){fillChatFriends();if(activeConversationId)loadMessages();}
+async function loadGroups(){
+  try{
+    const rows=await trackitApi.rpc("trackit_list_groups",{p_token:token})||[];const box=$( "groups-list");box.innerHTML="";
+    if(!rows.length){box.innerHTML='<div class="empty">Create a group with your friends.</div>';return;}
+    rows.forEach(g=>{const row=document.createElement("div");row.className="hub-row";row.innerHTML="<div><b>"+escapeHtml(g.name)+"</b><small>"+g.member_count+" members</small></div><button class='small secondary'>Open chat</button>";row.querySelector("button").onclick=()=>{activeConversationId=g.conversation_id;showHub("chat");loadMessages();};box.append(row);});
+  }catch(e){$( "groups-list").textContent=e.message;}
+}
+async function loadPlaces(){
+  try{
+    const rows=await trackitApi.rpc("trackit_list_places",{p_token:token})||[];const box=$( "places-list");box.innerHTML="";
+    if(!rows.length){box.innerHTML='<div class="empty">Save Home, School, Work, or custom places.</div>';return;}
+    rows.forEach(p=>{const row=document.createElement("div");row.className="hub-row";const b=document.createElement("button");b.className="small secondary";b.textContent="View";b.onclick=()=>{map.setView([p.latitude,p.longitude],17);};const d=document.createElement("div");d.innerHTML="<b>"+escapeHtml(p.name)+"</b><small>"+escapeHtml(p.kind)+"</small>";row.append(d,b);box.append(row);});
+  }catch(e){$( "places-list").textContent=e.message;}
+}
+async function loadMeetups(){
+  try{
+    const rows=await trackitApi.rpc("trackit_list_meetups",{p_token:token})||[];const box=$( "meetups-list");box.innerHTML="";
+    if(!rows.length){box.innerHTML='<div class="empty">Create a meet-up at your current location.</div>';return;}
+    rows.forEach(m=>{const row=document.createElement("div");row.className="hub-row";const d=document.createElement("div");d.innerHTML="<b>"+escapeHtml(m.title)+"</b><small>"+escapeHtml(m.owner_username)+" • "+m.member_count+" people"+(m.starts_at?" • "+new Date(m.starts_at).toLocaleString():"")+"</small>";const b=document.createElement("button");b.className="small secondary";b.textContent="View";b.onclick=()=>map.setView([m.latitude,m.longitude],17);row.append(d,b);box.append(row);});
+  }catch(e){$( "meetups-list").textContent=e.message;}
+}
+async function loadActivity(){
+  try{const rows=await trackitApi.rpc("trackit_list_activity",{p_token:token})||[];const box=$( "activity-list");box.innerHTML=rows.length?"":"<div class='empty'>No activity yet.</div>";rows.forEach(x=>{const r=document.createElement("div");r.className="hub-row";r.innerHTML="<div><b>"+escapeHtml(x.text)+"</b><small>"+new Date(x.created_at).toLocaleString()+"</small></div>";box.append(r);});}catch(e){$( "activity-list").textContent=e.message;}
+}
+async function loadNotifications(){
+  try{const rows=await trackitApi.rpc("trackit_list_notifications",{p_token:token})||[];const box=$( "notifications-list");box.innerHTML=rows.length?"":"<div class='empty'>No alerts.</div>";const unread=rows.filter(x=>!x.read_at).length;$( "trackit-unread").textContent=unread+" unread notification"+(unread===1?"":"s");rows.forEach(x=>{const r=document.createElement("div");r.className="hub-row "+(!x.read_at?"unread":"");const b=document.createElement("button");b.className="small secondary";b.textContent=x.read_at?"Read":"Mark read";b.onclick=async()=>{await trackitApi.rpc("trackit_mark_notification_read",{p_token:token,p_id:x.id});loadNotifications();};const d=document.createElement("div");d.innerHTML="<b>"+escapeHtml(x.title)+"</b><small>"+escapeHtml(x.body)+" • "+new Date(x.created_at).toLocaleString()+"</small>";r.append(d,b);box.append(r);});}catch(e){$( "notifications-list").textContent=e.message;}
+}
+async function loadDeviceStatus(){
+  try{const rows=await trackitApi.rpc("trackit_list_device_status",{p_token:token})||[];const box=$( "device-status-list");box.innerHTML=rows.length?"":"<div class='empty'>No friend device status yet.</div>";rows.forEach(x=>{const r=document.createElement("div");r.className="hub-row";const battery=x.battery_percent==null?"Battery unavailable":("🔋 "+x.battery_percent+"%"+(x.charging?" • charging":""));r.innerHTML="<div><b>"+escapeHtml(x.username)+"</b><small>"+(x.online?"🟢 Online":"⚪ Offline")+" • "+battery+" • "+(x.updated_at?formatUpdated(x.updated_at):"No update")+"</small></div>";box.append(r);});}catch(e){$( "device-status-list").textContent=e.message;}
+}
+async function updateOwnDeviceStatus(){
+  const b=navigator.getBattery?await navigator.getBattery().catch(()=>null):null;
+  await trackitApi.rpc("trackit_set_device_status",{p_token:token,p_battery:b?Math.round(b.level*100):null,p_charging:b?b.charging:false,p_platform:/iPad|iPhone/.test(navigator.userAgent)?"iOS":"Web",p_online:true}).catch(()=>{});
+}
+async function currentCoords(){
+  if(!navigator.geolocation)throw new Error("Location is unavailable.");
+  return new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,maximumAge:10000,timeout:15000}));
+}
+function bindTrackitFeatures(){
+  document.querySelectorAll(".hub-tab").forEach(b=>b.onclick=()=>showHub(b.dataset.hub));
+  $( "safe-home").onclick=()=>sendSafetyStatus("I'm home");
+  $( "safe-school").onclick=()=>sendSafetyStatus("I'm at school");
+  $( "safe-way").onclick=()=>sendSafetyStatus("I'm on my way");
+  $( "safe-timer").onclick=async()=>{const mins=prompt("How many minutes should the safety timer run?","30");const n=Number(mins);if(!Number.isFinite(n)||n<=0)return;await trackitApi.rpc("trackit_create_safety_timer",{p_token:token,p_label:"Check in",p_expires_at:new Date(Date.now()+n*60000).toISOString()});loadSafety();};
+  $( "chat-open").onclick=openChat;
+  $( "chat-form").onsubmit=async e=>{e.preventDefault();const body=$( "chat-input").value.trim();if(!body||!activeConversationId)return;await trackitApi.rpc("trackit_send_message",{p_token:token,p_conversation_id:activeConversationId,p_body:body});$( "chat-input").value="";loadMessages();};
+  $( "group-form").onsubmit=async e=>{e.preventDefault();const name=$( "group-name").value.trim();if(!name)return;const ids=[...$( "find-friend").options].slice(1).map(o=>o.value);try{await trackitApi.rpc("trackit_create_group",{p_token:token,p_name:name,p_friend_ids:ids});$( "group-name").value="";loadGroups();}catch(err){alert(err.message);}};
+  $( "place-form").onsubmit=async e=>{e.preventDefault();try{const p=await currentCoords();await trackitApi.rpc("trackit_create_place",{p_token:token,p_name:$( "place-name").value.trim(),p_latitude:p.coords.latitude,p_longitude:p.coords.longitude,p_kind:$( "place-kind").value});$( "place-name").value="";loadPlaces();}catch(err){alert(err.message);}};
+  $( "meetup-form").onsubmit=async e=>{e.preventDefault();try{const p=await currentCoords();const t=$( "meetup-time").value?new Date($( "meetup-time").value).toISOString():null;const ids=[...$( "find-friend").options].slice(1).map(o=>o.value);await trackitApi.rpc("trackit_create_meetup",{p_token:token,p_title:$( "meetup-title").value.trim(),p_latitude:p.coords.latitude,p_longitude:p.coords.longitude,p_starts_at:t,p_friend_ids:ids});$( "meetup-title").value="";loadMeetups();}catch(err){alert(err.message);}};
+  $( "privacy-pause").onclick=()=>stopSharing().then(()=>$( "privacy-message").textContent="Location sharing paused.");
+  $( "privacy-info").onclick=()=>alert("Trackit shares your location only when you start sharing or send an SOS. Friends only see locations through an active friend connection. You can stop sharing at any time.");
+}
+\nasync function init() {
   if (!(await checkSession())) return;
 
   const { data } = await supabase.rpc("my_location_status", { p_token: token });
@@ -690,7 +809,7 @@ async function init() {
 
   await refreshFriends();
   if (settings.refresh) refreshTimer = setInterval(refreshFriends, 10000);
-  bindSettings();
+  bindSettings();\n  loadNotifications();
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
