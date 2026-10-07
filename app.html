@@ -166,7 +166,7 @@ const SUPABASE_KEY = "sb_publishable_bAIMCv0YQnAsWv_ppNzWhQ_uSRRFyTC";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const token = localStorage.getItem("lt_token");
-const username = localStorage.getItem("lt_user") || "you";
+let username = localStorage.getItem("lt_user") || "";
 if (!token) location.replace("login.html");
 
 const $ = id => document.getElementById(id);
@@ -176,7 +176,7 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "© OpenStreetMap contributors"
 }).addTo(map);
 
-$("account").textContent = "Signed in as " + username;
+$("account").textContent = username ? "Signed in as " + username : "Signed in";
 
 let myMarker = null;
 let friendMarkers = new Map();
@@ -220,6 +220,8 @@ async function checkSession() {
     location.replace("login.html");
     return false;
   }
+  username = data.username || localStorage.getItem("lt_user") || "";
+  if (username) { localStorage.setItem("lt_user", username); $("account").textContent = "Signed in as " + username; }
   return true;
 }
 
@@ -557,9 +559,11 @@ $("stop").onclick = stopSharing;
 
 $("out").onclick = async () => {
   if (watch !== null) navigator.geolocation.clearWatch(watch);
-  await supabase.rpc("logout_account", { p_token: token });
-  localStorage.clear();
+  localStorage.removeItem("lt_token");
+  localStorage.removeItem("lt_user");
+  localStorage.removeItem("lt_settings");
   location.replace("login.html");
+  supabase.rpc("logout_account", { p_token: token }).catch(() => {});
 };
 
 
