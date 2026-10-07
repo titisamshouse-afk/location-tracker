@@ -155,3 +155,9 @@ html[data-theme="dark"] .home-action,html[data-theme="dark"] .account-menu-butto
 .home-action{min-height:128px;padding:18px}
 .account-menu-button{min-height:52px;padding:16px}
 @media(max-width:560px){.bottom-nav{height:78px}.bottom-tab{min-height:64px}.bottom-tab b{font-size:11px}}
+
+/* Trackit OTA feature center */
+.ota-dashboard{border-top:1px solid #e5e7eb}.ota-feature-grid{margin-top:10px}.feature-card{cursor:pointer}.feature-card:active{transform:scale(.99)}
+.feature-center-card{max-height:90vh;overflow:auto}.ota-section{padding:14px 0;border-bottom:1px solid #e5e7eb}.ota-section:last-child{border-bottom:0}.ota-section h3{margin:0 0 9px;font-size:15px}.ota-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ota-input{width:100%;padding:11px;border:1px solid #d1d5db;border-radius:10px;background:#fff;color:#111827;margin:4px 0 8px}.ota-profile-preview{display:flex;align-items:center;gap:12px;margin-bottom:10px}.ota-profile-preview img{width:48px;height:48px;border-radius:50%;object-fit:cover}.ota-section details{border:1px solid #e5e7eb;border-radius:10px;padding:10px;margin:7px 0}.ota-section summary{font-weight:700;cursor:pointer}.ota-section details p{margin:7px 0 0}.ota-distance{margin-top:8px}.ota-pin-row{display:flex;justify-content:space-between;align-items:center;gap:8px}.ota-pin-row>div{min-width:0}.ota-pin-row small{display:block;color:#6b7280;margin-top:2px}.ota-empty{padding:10px}.ota-loading{padding:10px;color:#6b7280}
+html[data-theme="dark"] .ota-section,html[data-theme="dark"] .ota-section details{border-color:#374151}html[data-theme="dark"] .ota-input{background:#172033;color:#f3f4f6;border-color:#374151}
+@media(max-width:560px){.ota-actions{grid-template-columns:1fr}.feature-center-card{width:100%;padding:16px}}
