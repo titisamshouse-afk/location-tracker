@@ -829,5 +829,24 @@ window.addEventListener("beforeunload", () => {
 
 init();
 </script>
+
+<script>
+(function () {
+  function openSettingsFallback() {
+    const dialog = document.getElementById("settings-dialog");
+    if (dialog) dialog.classList.remove("hidden");
+  }
+  function closeSettingsFallback() {
+    const dialog = document.getElementById("settings-dialog");
+    if (dialog) dialog.classList.add("hidden");
+  }
+  document.addEventListener("click", function (event) {
+    const open = event.target.closest && event.target.closest("#settings-open");
+    const close = event.target.closest && event.target.closest("#settings-close");
+    if (open) openSettingsFallback();
+    if (close) closeSettingsFallback();
+  }, true);
+})();
+</script>
 </body>
 </html>
