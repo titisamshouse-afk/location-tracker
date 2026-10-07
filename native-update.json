@@ -1,5 +1,5 @@
 {
-  "version": "4.0.2",
-  "downloadUrl": "https://github.com/titisamshouse-afk/Location-tracker-naitive/releases/download/v4.0.2/app-debug.apk",
-  "notes": "Trackit 4.0.2: Android launcher icon fix and native version update."
+  "version": "4.0.3",
+  "downloadUrl": "https://github.com/titisamshouse-afk/Location-tracker-naitive/releases/download/v4.0.3/app-debug.apk",
+  "notes": "Trackit 4.0.3: Settings reliability, fresh-install login reset, and native fixes."
 }
