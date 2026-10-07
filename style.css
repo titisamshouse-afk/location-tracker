@@ -147,3 +147,11 @@ html[data-theme="dark"] .bottom-tab.active{color:#60a5fa;background:#172033}
 html[data-theme="dark"] .bottom-tab.bottom-sos.active{color:#f87171;background:#3a1f25}
 html[data-theme="dark"] .home-action,html[data-theme="dark"] .account-menu-button{background:#172033;border-color:#374151}
 @media(min-width:700px){.bottom-nav{left:50%;right:auto;transform:translateX(-50%);width:min(700px,100%)}.home-grid{max-width:700px}}
+
+/* Trackit navigation accessibility */
+.bottom-nav{height:78px;padding:7px 8px max(7px,env(safe-area-inset-bottom)) 8px}
+.bottom-tab{font-size:24px;border-radius:14px;gap:2px}
+.bottom-tab b{font-size:12px}
+.home-action{min-height:128px;padding:18px}
+.account-menu-button{min-height:52px;padding:16px}
+@media(max-width:560px){.bottom-nav{height:78px}.bottom-tab{min-height:64px}.bottom-tab b{font-size:11px}}
