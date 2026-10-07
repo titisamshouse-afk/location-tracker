@@ -122,6 +122,12 @@
     </div>
 
     <div class="settings-section">
+      <h3>App Version</h3>
+      <div id="settings-version" class="setting-version">Trackit 4.0.3</div>
+      <div class="muted">Current Trackit website/app version.</div>
+    </div>
+
+    <div class="settings-section">
       <h3>App Update</h3>
       <button id="settings-app-update" class="setting-button">🔄 Check for app update</button>
       <div class="muted">Check for a newer Android app version and open the download page when one is available.</div>
@@ -808,7 +814,7 @@ function bindTrackitFeatures(){
   $( "privacy-pause").onclick=()=>stopSharing().then(()=>$( "privacy-message").textContent="Location sharing paused.");
   $( "privacy-info").onclick=()=>alert("Trackit shares your location only when you start sharing or send an SOS. Friends only see locations through an active friend connection. You can stop sharing at any time.");
 }
-\nasync function loadTrackitVersion(){try{const r=await fetch("trackit-version.json?"+Date.now());const v=await r.json();$("trackit-version").textContent="Trackit "+v.version+" • OTA";}catch{}}\n\nasync function init() {
+\nasync function loadTrackitVersion(){try{const r=await fetch("trackit-version.json?"+Date.now());const v=await r.json();const label="Trackit "+v.version;$("trackit-version").textContent=label+" • OTA";const sv=$("settings-version");if(sv)sv.textContent=label;}catch{}}\n\nasync function init() {
   if (!(await checkSession())) return;
 
   const { data } = await supabase.rpc("my_location_status", { p_token: token });
