@@ -331,6 +331,14 @@
       <button id="settings-reset" class="setting-button danger-setting">↩ Reset app settings</button>
     </div>
 
+
+    <div class="settings-section" id="friend-tags-section">
+      <h3>🏷️ Friend categories & tags</h3>
+      <div class="muted">Organize friends as Family, Friends, Best Friend, or create your own tags. These tags are private to this device.</div>
+      <div id="friend-tag-filter" class="tag-filter"></div>
+      <div id="friend-tag-list" class="friend-tag-list"></div>
+      <button id="friend-tag-create" class="setting-button">＋ Create custom tag</button>
+    </div>
     <div id="settings-message" class="muted"></div>
   </div>
 </div>
@@ -1058,6 +1066,18 @@ function otaBind(){
 }
 function otaRecordPosition(position){otaSaveHistory(position.coords);}
 
+
+
+/* Trackit OTA friend categories/tags */
+const FRIEND_TAGS_KEY="trackit_friend_tags_v1";
+const FRIEND_TAGS=[{id:"family",name:"Family",icon:"👨‍👩‍👧‍👦"},{id:"friends",name:"Friends",icon:"👥"},{id:"best-friend",name:"Best Friend",icon:"💙"}];
+function otaFriendTags(){return otaRead(FRIEND_TAGS_KEY,{});}
+function otaSaveFriendTags(x){otaWrite(FRIEND_TAGS_KEY,x);}
+function otaAllTags(){return [...FRIEND_TAGS,...otaRead("trackit_custom_tags_v1",[])];}
+function otaTagChip(tag){return '<span class="friend-tag-chip">'+tag.icon+" "+escapeHtml(tag.name)+'</span>';}
+function otaRenderFriendTags(){const box=$( "friend-tag-list"),filter=$( "friend-tag-filter");if(!box||!filter)return;const friends=otaFriends(),assigned=otaFriendTags();filter.innerHTML='<button class="tag-filter-button active" data-tag-filter="all">All</button>'+otaAllTags().map(t=>'<button class="tag-filter-button" data-tag-filter="'+escapeHtml(t.id)+'">'+t.icon+" "+escapeHtml(t.name)+'</button>').join("");const active="all";box.innerHTML="";if(!friends.length){box.innerHTML='<div class="empty">Add friends first, then assign categories.</div>';return;}friends.forEach(fr=>{const tags=assigned[fr.id]||[];const row=document.createElement("div");row.className="friend-tag-item";const head=document.createElement("div");head.className="friend-tag-head";const title=document.createElement("b");title.textContent=fr.label.split(" • ")[0];const chips=document.createElement("div");chips.className="friend-tag-chips";tags.forEach(id=>{const t=otaAllTags().find(x=>x.id===id);if(t)chips.insertAdjacentHTML("beforeend",otaTagChip(t));});if(!tags.length)chips.innerHTML='<span class="muted">No tags</span>';head.append(title,chips);const controls=document.createElement("div");controls.className="friend-tag-controls";otaAllTags().forEach(t=>{const b=document.createElement("button");b.className="small secondary";b.textContent=t.icon+" "+t.name;b.onclick=()=>{const a=otaFriendTags();const list=new Set(a[fr.id]||[]);if(list.has(t.id))list.delete(t.id);else list.add(t.id);a[fr.id]=[...list];otaSaveFriendTags(a);otaRenderFriendTags();};controls.append(b);});row.append(head,controls);box.append(row);});filter.querySelectorAll("button").forEach(b=>b.onclick=()=>{filter.querySelectorAll("button").forEach(x=>x.classList.remove("active"));b.classList.add("active");const id=b.dataset.tagFilter;box.querySelectorAll(".friend-tag-item").forEach(row=>{if(id==="all"){row.style.display="" ;return;}const name=row.querySelector("b")?.textContent;const fr=friends.find(x=>x.label.split(" • ")[0]===name);row.style.display=(fr&&(assigned[fr.id]||[]).includes(id))?"":"none";});});}
+function otaBindFriendTags(){const b=$( "friend-tag-create");if(b)b.onclick=()=>{const name=prompt("Name your custom tag:","Close Friends");if(!name?.trim())return;const custom=otaRead("trackit_custom_tags_v1",[]);const id=name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||("tag-"+Date.now());if(otaAllTags().some(t=>t.id===id)){alert("That tag already exists.");return;}custom.push({id,name:name.trim().slice(0,30),icon:"🏷️"});otaWrite("trackit_custom_tags_v1",custom);otaRenderFriendTags();};otaRenderFriendTags();}
+
 function setupAppNavigation() {
   const pages = {
     home: $("tab-home"),
@@ -1092,6 +1112,7 @@ function setupAppNavigation() {
   document.querySelectorAll(".bottom-tab").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
   document.querySelectorAll("[data-go-tab]").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.goTab)));
   $("account-settings-button").onclick = openSettings;
+  otaBindFriendTags();
   $("account-logout-button").onclick = () => $("out").click();
 
   async function loadAppChatFriends() {
