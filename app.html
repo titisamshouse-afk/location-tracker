@@ -187,6 +187,12 @@
 
     <div class="ota-section" id="ota-safety-section">
       <h3>🛡️ Safety center</h3>
+      <div class="ota-safety-family">
+        <div class="ota-safety-family-head"><div><b>👨‍👩‍👧‍👦 Family</b><div class="muted">People you've marked as Family.</div></div><span class="hub-badge">Quick access</span></div>
+        <div id="ota-family-quick-list" class="hub-list"></div>
+      </div>
+      <button id="ota-quick-sos" class="quick-sos-button" type="button">🆘 QUICK SOS</button>
+      <div class="muted quick-sos-note">Sends an SOS alert to your active friends. Confirm before sending.</div>
       <div class="ota-actions">
         <button id="ota-safe-home" class="secondary">🏠 I'm home</button>
         <button id="ota-safe-school" class="secondary">🏫 At school</button>
@@ -1010,7 +1016,9 @@ async function currentCoords(){
   if(!navigator.geolocation)throw new Error("Location is unavailable.");
   return new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,maximumAge:10000,timeout:15000}));
 }
-function bindTrackitFeatures(){
+function bindTrackitFeatures(){  $( "ota-quick-sos")?.addEventListener("click",otaSendQuickSOS);
+  otaRenderFamilyQuickList();
+
   document.querySelectorAll(".hub-tab").forEach(b=>b.onclick=()=>showHub(b.dataset.hub));
   $( "safe-home").onclick=()=>sendSafetyStatus("I'm home");
   $( "safe-school").onclick=()=>sendSafetyStatus("I'm at school");
@@ -1038,9 +1046,30 @@ function otaWrite(key,value){localStorage.setItem(key,JSON.stringify(value));}
 function otaShowSection(name){document.querySelectorAll(".ota-section").forEach(x=>x.style.display="none");const el=$( "ota-"+name+"-section");if(el)el.style.display="block";}
 function otaOpen(){ $("feature-center-dialog").classList.remove("hidden"); document.querySelectorAll(".ota-section").forEach(x=>x.style.display="block"); otaRenderSearch();otaRenderHistory();otaRenderPins();otaRenderProfile();otaRenderDevice();otaRenderNotifications();otaRenderSafety();otaRenderPlaces();otaRenderMeetups();otaRenderGroups(); }
 function otaClose(){ $("feature-center-dialog").classList.add("hidden"); }
+function otaRenderFamilyQuickList(){
+  const box=$( "ota-family-quick-list"); if(!box)return;
+  const friends=otaFriends(), assigned=otaFriendTags();
+  const family=friends.filter(f=>(assigned[f.id]||[]).includes("family"));
+  box.innerHTML="";
+  if(!family.length){box.innerHTML='<div class="empty">No friends are marked Family yet. Add the Family tag in Account → Friend categories & tags.</div>';return;}
+  family.forEach(f=>{
+    const row=document.createElement("div");row.className="hub-row family-quick-row";
+    const d=document.createElement("div");d.innerHTML="<b>👤 "+escapeHtml(f.label.split(" • ")[0])+"</b><small>Family</small>";
+    const chat=document.createElement("button");chat.className="small secondary";chat.textContent="Chat";
+    chat.onclick=()=>{ $("feature-center-dialog").classList.add("hidden"); window.setupAppNavigationSwitchToChat?.(f.id); };
+    row.append(d,chat);box.append(row);
+  });
+}
 function otaFriends(){return [...document.querySelectorAll("#find-friend option")].slice(1).map(o=>({id:o.value,label:o.textContent}));}
 function otaRenderSearch(filter=""){const box=$( "ota-search-results");if(!box)return;const q=filter.toLowerCase().trim();box.innerHTML="";const rows=otaFriends().filter(x=>x.label.toLowerCase().includes(q));if(!rows.length){box.innerHTML='<div class="empty">No matching friends.</div>';return;}rows.forEach(x=>{const r=document.createElement("div");r.className="hub-row";const d=document.createElement("div");d.innerHTML="<b>"+escapeHtml(x.label.split(" • ")[0])+"</b><small>Use View on the Location tab for live/last-known location.</small>";const b=document.createElement("button");b.className="small secondary";b.textContent="Find";b.onclick=()=>{ $("feature-center-dialog").classList.add("hidden");$("find-friend").value=x.id;findFriend();};r.append(d,b);box.append(r);});}
 async function otaRenderNotifications(){try{const rows=await trackitApi.rpc("trackit_list_notifications",{p_token:token})||[];const box=$( "ota-notifications-list");if(!box)return;box.innerHTML="";const unread=rows.filter(x=>!x.read_at).length;$( "ota-notification-count").textContent=String(unread);if(!rows.length){box.innerHTML='<div class="empty">No notifications.</div>';return;}rows.slice(0,30).forEach(x=>{const r=document.createElement("div");r.className="hub-row "+(!x.read_at?"unread":"");const d=document.createElement("div");d.innerHTML="<b>"+escapeHtml(x.title)+"</b><small>"+escapeHtml(x.body)+" • "+new Date(x.created_at).toLocaleString()+"</small>";const b=document.createElement("button");b.className="small secondary";b.textContent=x.read_at?"Read":"Mark read";b.onclick=async()=>{await trackitApi.rpc("trackit_mark_notification_read",{p_token:token,p_id:x.id});otaRenderNotifications();loadNotifications();};r.append(d,b);box.append(r);});}catch(e){$( "ota-notifications-list").textContent=e.message;}}
+async function otaSendQuickSOS(){
+  if(!confirm("Send a Quick SOS alert to your active friends?")) return;
+  const b=$( "ota-quick-sos"); if(b)b.disabled=true;
+  try{ await sendSOS(); $( "ota-safety-message").textContent="SOS sent to your active friends."; }
+  catch(e){ $( "ota-safety-message").textContent="Could not send SOS: "+e.message; }
+  finally{ if(b)b.disabled=false; }
+}
 async function otaRenderSafety(){try{const rows=await trackitApi.rpc("trackit_list_safety_timers",{p_token:token})||[];const box=$( "ota-safety-list");box.innerHTML=rows.length?"":"<div class='empty'>No active safety timers.</div>";rows.forEach(t=>{const r=document.createElement("div");r.className="hub-row";r.innerHTML="<div><b>"+escapeHtml(t.label)+"</b><small>Until "+new Date(t.expires_at).toLocaleString()+"</small></div>";const b=document.createElement("button");b.className="small secondary";b.textContent="Check in";b.onclick=async()=>{await trackitApi.rpc("trackit_complete_safety_timer",{p_token:token,p_id:t.id});otaRenderSafety();};r.append(b);box.append(r);});}catch(e){$( "ota-safety-message").textContent=e.message;}}
 async function otaSafetyStatus(label){try{await trackitApi.rpc("trackit_set_safety_status",{p_token:token,p_status:label});$( "ota-safety-message").textContent="Status set to "+label+".";otaRenderNotifications();}catch(e){$( "ota-safety-message").textContent=e.message;}}
 async function otaRenderPlaces(){try{const rows=await trackitApi.rpc("trackit_list_places",{p_token:token})||[];const box=$( "ota-places-list");box.innerHTML=rows.length?"":"<div class='empty'>No saved places yet.</div>";rows.forEach(p=>{const r=document.createElement("div");r.className="hub-row";r.innerHTML="<div><b>"+escapeHtml(p.name)+"</b><small>"+escapeHtml(p.kind)+"</small></div>";const b=document.createElement("button");b.className="small secondary";b.textContent="View";b.onclick=()=>{$("feature-center-dialog").classList.add("hidden");map.setView([p.latitude,p.longitude],17);};r.append(b);box.append(r);});}catch(e){$( "ota-places-list").textContent=e.message;}}
