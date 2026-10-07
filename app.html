@@ -13,7 +13,7 @@
   <header class="top">
     <div>
       <h1>Trackit</h1>
-      <div id="account" class="top-subtitle"></div><div id="trackit-version" class="top-subtitle">Trackit 4.0.2 • OTA</div>
+      <div id="account" class="top-subtitle"></div><div id="trackit-version" class="top-subtitle">Trackit 4.0.3 • OTA</div>
     </div>
     <div class="top-actions"><button id="settings-open" class="small" aria-label="Open settings">⚙️ Settings</button><button id="out" class="small">Log out</button></div>
   </header>
@@ -873,7 +873,10 @@ function bindTrackitFeatures(){
   $( "privacy-pause").onclick=()=>stopSharing().then(()=>$( "privacy-message").textContent="Location sharing paused.");
   $( "privacy-info").onclick=()=>alert("Trackit shares your location only when you start sharing or send an SOS. Friends only see locations through an active friend connection. You can stop sharing at any time.");
 }
-\nasync function loadTrackitVersion(){try{const r=await fetch("trackit-version.json?"+Date.now());const v=await r.json();const label="Trackit "+v.version;$("trackit-version").textContent=label+" • OTA";const sv=$("settings-version");if(sv)sv.textContent=label;}catch{}}\n\n
+
+async function loadTrackitVersion(){try{const r=await fetch("trackit-version.json?"+Date.now());const v=await r.json();const label="Trackit "+v.version;$("trackit-version").textContent=label+" • OTA";const sv=$("settings-version");if(sv)sv.textContent=label;}catch{}}
+
+
 function setupAppNavigation() {
   const pages = {
     home: $("tab-home"),
@@ -897,7 +900,7 @@ function setupAppNavigation() {
   function switchTab(name) {
     Object.entries(pages).forEach(([key, page]) => page.classList.toggle("hidden", key !== name));
     document.querySelectorAll(".bottom-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
-    if (name === "location" && window.map) setTimeout(() => map.invalidateSize(), 50);
+    if (name === "location") setTimeout(() => map.invalidateSize(), 50);
     if (name === "chat") loadAppChatFriends();
     if (name === "account") {
       $("account-tab-name").textContent = username || "Account";
@@ -988,7 +991,8 @@ async function init() {
   if (settings.refresh) refreshTimer = setInterval(refreshFriends, 10000);
   bindSettings();
   setupAppNavigation();
-  loadNotifications();\n  loadTrackitVersion();
+  loadNotifications();
+  loadTrackitVersion();
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
