@@ -697,14 +697,12 @@ function showHub(name){
   if(loaders[name]) loaders[name]();
 }
 async function sendSafetyStatus(label){
+  const s=$( "safety-message" );
   try{
-    await trackitApi.rpc("trackit_add_activity",{p_account:null,p_kind:"",p_text:""});
-  }catch{}
-  const s=$( "safety-message" ); s.textContent="Sharing safety status: "+label;
-  try{
-    const {data}=await supabase.rpc("trackit_list_notifications",{p_token:token});
-    s.textContent="Status set to “"+label+"”. Your activity is recorded in Trackit.";
-  }catch{}
+    await trackitApi.rpc("trackit_set_safety_status",{p_token:token,p_status:label});
+    s.textContent="Status set to “"+label+"”. Your friends were notified.";
+    loadNotifications();
+  }catch(e){s.textContent="Could not update safety status: "+e.message;}
 }
 async function loadSafety(){
   try{
@@ -742,7 +740,7 @@ async function loadMessages(){
   const rows=(await trackitApi.rpc("trackit_list_messages",{p_token:token,p_conversation_id:activeConversationId,p_limit:100})||[]).reverse();
   const box=$( "chat-messages");box.innerHTML="";
   if(!rows.length){box.innerHTML='<div class="empty">No messages yet. Say hello!</div>';return;}
-  rows.forEach(m=>{const row=document.createElement("div");row.className="message "+(m.sender_id===localStorage.getItem("lt_account_id")?"mine":"");row.innerHTML="<b>"+escapeHtml(m.sender_username)+"</b><span>"+escapeHtml(m.body)+"</span><small>"+new Date(m.created_at).toLocaleString()+"</small>";box.append(row);});
+  rows.forEach(m=>{const row=document.createElement("div");row.className="message "+(m.sender_username===username?"mine":"");row.innerHTML="<b>"+escapeHtml(m.sender_username)+"</b><span>"+escapeHtml(m.body)+"</span><small>"+new Date(m.created_at).toLocaleString()+"</small>";box.append(row);});
   box.scrollTop=box.scrollHeight;
 }
 async function loadChatFriends(){fillChatFriends();if(activeConversationId)loadMessages();}
