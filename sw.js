@@ -1,4 +1,4 @@
-const CACHE="trackit-v4";
+const CACHE="trackit-v5";
 const ASSETS=["./login.html","./create-account.html","./app.html","./style.css","./manifest.json"];
 
 self.addEventListener("install",event=>{
