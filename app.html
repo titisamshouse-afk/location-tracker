@@ -621,14 +621,22 @@ async function sendSOS() {
   const status = $("sos-status");
   status.textContent = "Getting your current location…";
   const send = async (lat, lng, accuracy) => {
-    const { error } = await supabase.rpc("create_sos_event", {
+    const { data:eventData, error } = await supabase.rpc("create_sos_event", {
       p_token: token, p_latitude: lat, p_longitude: lng, p_accuracy: accuracy
     });
     if (error) {
       status.textContent = "SOS failed: " + error.message;
       return;
     }
-    status.textContent = "SOS sent with your current location.";
+    const eventId=eventData?.event_id;
+    if(eventId){
+      try{
+        const push=await fetch(SUPABASE_URL+"/functions/v1/send-sos",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({event_id:eventId})});
+        const pushData=await push.json().catch(()=>({}));
+        if(push.ok && pushData.notified) status.textContent="SOS sent. "+pushData.notified+" friend notification"+(pushData.notified===1?"":"s")+" sent.";
+        else status.textContent="SOS recorded and your friends' in-app alerts were updated.";
+      }catch{status.textContent="SOS recorded and your friends' in-app alerts were updated.";}
+    }
     if (settings.vibrate && navigator.vibrate) navigator.vibrate([180, 100, 180]);
     playSosSound();
   };
