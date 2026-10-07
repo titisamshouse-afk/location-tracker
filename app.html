@@ -143,6 +143,137 @@
     </div>
     <div id="sos-status" class="muted"></div>
   </section>
+<!-- Trackit OTA feature center -->
+<section class="panel ota-dashboard">
+  <div class="find-head">
+    <div><h2>✨ Trackit features</h2><div class="muted">New web features update automatically over OTA.</div></div>
+    <button id="feature-center-open" class="secondary">Open all features</button>
+  </div>
+  <div class="feature-grid ota-feature-grid">
+    <button class="feature-card" data-ota-feature="search">🔎<b>Search friends</b><small>Find friends quickly</small></button>
+    <button class="feature-card" data-ota-feature="safety">🛡️<b>Safety center</b><small>Status and safety timer</small></button>
+    <button class="feature-card" data-ota-feature="notifications">🔔<b>Notifications</b><small>Alerts and unread items</small></button>
+    <button class="feature-card" data-ota-feature="places">🏠<b>Places</b><small>Home, school, work and pins</small></button>
+    <button class="feature-card" data-ota-feature="meetups">📅<b>Meetups</b><small>Plan a place to meet</small></button>
+    <button class="feature-card" data-ota-feature="groups">👥<b>Groups</b><small>Group conversations</small></button>
+    <button class="feature-card" data-ota-feature="device">🔋<b>Device</b><small>Battery and device info</small></button>
+    <button class="feature-card" data-ota-feature="history">🧭<b>Location history</b><small>Private history on this device</small></button>
+    <button class="feature-card" data-ota-feature="maptools">📌<b>Map tools</b><small>Search, pins and distance</small></button>
+    <button class="feature-card" data-ota-feature="profile">👤<b>Profile</b><small>Profile and preferences</small></button>
+    <button class="feature-card" data-ota-feature="help">❓<b>Help</b><small>FAQ and privacy</small></button>
+    <button class="feature-card" data-ota-feature="share">📤<b>Share Trackit</b><small>Share the app link</small></button>
+  </div>
+</section>
+
+<div id="feature-center-dialog" class="dialog hidden" role="dialog" aria-modal="true" aria-labelledby="feature-center-title">
+  <div class="dialog-card feature-center-card">
+    <div class="dialog-head"><h2 id="feature-center-title">Trackit features</h2><button id="feature-center-close" class="icon-btn" aria-label="Close">×</button></div>
+
+    <div class="ota-section" id="ota-search-section">
+      <h3>🔎 Search friends</h3>
+      <input id="ota-friend-search" class="ota-input" placeholder="Search by username…" autocomplete="off">
+      <div id="ota-search-results" class="hub-list"></div>
+    </div>
+
+    <div class="ota-section" id="ota-safety-section">
+      <h3>🛡️ Safety center</h3>
+      <div class="ota-actions">
+        <button id="ota-safe-home" class="secondary">🏠 I'm home</button>
+        <button id="ota-safe-school" class="secondary">🏫 At school</button>
+        <button id="ota-safe-way" class="secondary">🚶 On my way</button>
+        <button id="ota-safe-timer" class="secondary">⏱️ Safety timer</button>
+      </div>
+      <div id="ota-safety-message" class="muted"></div>
+      <div id="ota-safety-list" class="hub-list"></div>
+    </div>
+
+    <div class="ota-section" id="ota-notifications-section">
+      <h3>🔔 Notifications <span id="ota-notification-count" class="hub-badge">0</span></h3>
+      <div id="ota-notifications-list" class="hub-list"></div>
+    </div>
+
+    <div class="ota-section" id="ota-places-section">
+      <h3>🏠 Places</h3>
+      <form id="ota-place-form" class="inline-form">
+        <input id="ota-place-name" placeholder="Place name (Home, School…)" maxlength="40" required>
+        <select id="ota-place-kind"><option value="home">Home</option><option value="school">School</option><option value="work">Work</option><option value="custom">Custom</option></select>
+        <button class="btn">Save current location</button>
+      </form>
+      <div id="ota-places-list" class="hub-list"></div>
+    </div>
+
+    <div class="ota-section" id="ota-meetups-section">
+      <h3>📅 Meetups</h3>
+      <form id="ota-meetup-form" class="inline-form">
+        <input id="ota-meetup-title" placeholder="Meetup name" maxlength="60" required>
+        <input id="ota-meetup-time" type="datetime-local">
+        <button class="btn">Create at my location</button>
+      </form>
+      <div id="ota-meetups-list" class="hub-list"></div>
+    </div>
+
+    <div class="ota-section" id="ota-groups-section">
+      <h3>👥 Groups</h3>
+      <form id="ota-group-form" class="inline-form">
+        <input id="ota-group-name" placeholder="New group name" maxlength="50" required>
+        <button class="btn">Create group with my friends</button>
+      </form>
+      <div id="ota-groups-list" class="hub-list"></div>
+    </div>
+
+    <div class="ota-section" id="ota-device-section">
+      <h3>🔋 Device information</h3>
+      <div id="ota-device-info" class="privacy-card">Checking device…</div>
+      <button id="ota-device-refresh" class="setting-button">Refresh device status</button>
+    </div>
+
+    <div class="ota-section" id="ota-history-section">
+      <h3>🧭 Location history</h3>
+      <div class="muted">History is stored only in this browser/device. It is not uploaded by this feature.</div>
+      <div id="ota-history-list" class="hub-list"></div>
+      <button id="ota-history-clear" class="setting-button danger-setting">Clear my local location history</button>
+    </div>
+
+    <div class="ota-section" id="ota-maptools-section">
+      <h3>📌 Map tools</h3>
+      <form id="ota-map-search-form" class="inline-form">
+        <input id="ota-map-search" placeholder="Search OpenStreetMap places…" maxlength="100">
+        <button class="btn">Search map</button>
+      </form>
+      <div id="ota-map-search-results" class="hub-list"></div>
+      <div class="ota-actions">
+        <button id="ota-drop-pin" class="secondary">📌 Drop pin at my location</button>
+        <button id="ota-clear-pins" class="secondary">🗑 Clear my pins</button>
+      </div>
+      <div id="ota-pins-list" class="hub-list"></div>
+      <div id="ota-distance" class="privacy-card">Choose a friend with a location to see distance and direction.</div>
+    </div>
+
+    <div class="ota-section" id="ota-profile-section">
+      <h3>👤 Profile</h3>
+      <div class="ota-profile-preview"><div id="ota-avatar-preview" class="account-avatar">👤</div><div><b id="ota-profile-name"></b><div class="muted">Your Trackit profile on this device</div></div></div>
+      <input id="ota-avatar-input" type="file" accept="image/*" class="ota-input">
+      <button id="ota-avatar-clear" class="setting-button">Remove profile picture</button>
+    </div>
+
+    <div class="ota-section" id="ota-help-section">
+      <h3>❓ Help & privacy</h3>
+      <details><summary>How does location sharing work?</summary><p class="muted">Your location is sent to Trackit only while you use location sharing or send an SOS. You can stop sharing at any time.</p></details>
+      <details><summary>Can friends see me when I stop sharing?</summary><p class="muted">Trackit can show a last-known location when that setting is enabled, rather than a live location.</p></details>
+      <details><summary>Does Trackit use Google Maps?</summary><p class="muted">No. Trackit uses OpenStreetMap tiles and OpenStreetMap search features.</p></details>
+      <details><summary>Where is local history stored?</summary><p class="muted">Location history added by this feature stays in local browser storage on this device.</p></details>
+      <button id="ota-privacy-button" class="setting-button">🔒 Privacy information</button>
+    </div>
+
+    <div class="ota-section" id="ota-share-section">
+      <h3>📤 Share Trackit</h3>
+      <p class="muted">Share the Trackit website/app link with someone.</p>
+      <button id="ota-share-button" class="setting-button">📤 Share Trackit</button>
+      <div id="ota-share-message" class="muted"></div>
+    </div>
+  </div>
+</div>
+
 </main>
 
 <div id="settings-dialog" class="dialog hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
@@ -295,6 +426,7 @@ async function sendLocation(position) {
   lastSend = Date.now();
 
   const c = position.coords;
+  otaRecordPosition(position);
   const { error } = await supabase.rpc("save_my_location", {
     p_token: token,
     p_lat: c.latitude,
@@ -382,6 +514,7 @@ function findMe() {
   navigator.geolocation.getCurrentPosition(
     position => {
       const c = position.coords;
+      otaRecordPosition(position);
       if (!myMarker) myMarker = L.marker([c.latitude, c.longitude]).addTo(map);
       myMarker.setLatLng([c.latitude, c.longitude]);
       myMarker.bindPopup(popupElement(username, "Your current location")).openPopup();
@@ -877,6 +1010,54 @@ function bindTrackitFeatures(){
 async function loadTrackitVersion(){try{const r=await fetch("trackit-version.json?"+Date.now());const v=await r.json();const label="Trackit "+v.version;$("trackit-version").textContent=label+" • OTA";const sv=$("settings-version");if(sv)sv.textContent=label;}catch{}}
 
 
+
+
+/* Trackit OTA feature pack */
+const OTA_HISTORY_KEY="trackit_local_location_history_v1";
+const OTA_PINS_KEY="trackit_local_map_pins_v1";
+function otaRead(key,fallback){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback));}catch{return fallback;}}
+function otaWrite(key,value){localStorage.setItem(key,JSON.stringify(value));}
+function otaShowSection(name){document.querySelectorAll(".ota-section").forEach(x=>x.style.display="none");const el=$( "ota-"+name+"-section");if(el)el.style.display="block";}
+function otaOpen(){ $("feature-center-dialog").classList.remove("hidden"); document.querySelectorAll(".ota-section").forEach(x=>x.style.display="block"); otaRenderSearch();otaRenderHistory();otaRenderPins();otaRenderProfile();otaRenderDevice();otaRenderNotifications();otaRenderSafety();otaRenderPlaces();otaRenderMeetups();otaRenderGroups(); }
+function otaClose(){ $("feature-center-dialog").classList.add("hidden"); }
+function otaFriends(){return [...document.querySelectorAll("#find-friend option")].slice(1).map(o=>({id:o.value,label:o.textContent}));}
+function otaRenderSearch(filter=""){const box=$( "ota-search-results");if(!box)return;const q=filter.toLowerCase().trim();box.innerHTML="";const rows=otaFriends().filter(x=>x.label.toLowerCase().includes(q));if(!rows.length){box.innerHTML='<div class="empty">No matching friends.</div>';return;}rows.forEach(x=>{const r=document.createElement("div");r.className="hub-row";const d=document.createElement("div");d.innerHTML="<b>"+escapeHtml(x.label.split(" • ")[0])+"</b><small>Use View on the Location tab for live/last-known location.</small>";const b=document.createElement("button");b.className="small secondary";b.textContent="Find";b.onclick=()=>{ $("feature-center-dialog").classList.add("hidden");$("find-friend").value=x.id;findFriend();};r.append(d,b);box.append(r);});}
+async function otaRenderNotifications(){try{const rows=await trackitApi.rpc("trackit_list_notifications",{p_token:token})||[];const box=$( "ota-notifications-list");if(!box)return;box.innerHTML="";const unread=rows.filter(x=>!x.read_at).length;$( "ota-notification-count").textContent=String(unread);if(!rows.length){box.innerHTML='<div class="empty">No notifications.</div>';return;}rows.slice(0,30).forEach(x=>{const r=document.createElement("div");r.className="hub-row "+(!x.read_at?"unread":"");const d=document.createElement("div");d.innerHTML="<b>"+escapeHtml(x.title)+"</b><small>"+escapeHtml(x.body)+" • "+new Date(x.created_at).toLocaleString()+"</small>";const b=document.createElement("button");b.className="small secondary";b.textContent=x.read_at?"Read":"Mark read";b.onclick=async()=>{await trackitApi.rpc("trackit_mark_notification_read",{p_token:token,p_id:x.id});otaRenderNotifications();loadNotifications();};r.append(d,b);box.append(r);});}catch(e){$( "ota-notifications-list").textContent=e.message;}}
+async function otaRenderSafety(){try{const rows=await trackitApi.rpc("trackit_list_safety_timers",{p_token:token})||[];const box=$( "ota-safety-list");box.innerHTML=rows.length?"":"<div class='empty'>No active safety timers.</div>";rows.forEach(t=>{const r=document.createElement("div");r.className="hub-row";r.innerHTML="<div><b>"+escapeHtml(t.label)+"</b><small>Until "+new Date(t.expires_at).toLocaleString()+"</small></div>";const b=document.createElement("button");b.className="small secondary";b.textContent="Check in";b.onclick=async()=>{await trackitApi.rpc("trackit_complete_safety_timer",{p_token:token,p_id:t.id});otaRenderSafety();};r.append(b);box.append(r);});}catch(e){$( "ota-safety-message").textContent=e.message;}}
+async function otaSafetyStatus(label){try{await trackitApi.rpc("trackit_set_safety_status",{p_token:token,p_status:label});$( "ota-safety-message").textContent="Status set to "+label+".";otaRenderNotifications();}catch(e){$( "ota-safety-message").textContent=e.message;}}
+async function otaRenderPlaces(){try{const rows=await trackitApi.rpc("trackit_list_places",{p_token:token})||[];const box=$( "ota-places-list");box.innerHTML=rows.length?"":"<div class='empty'>No saved places yet.</div>";rows.forEach(p=>{const r=document.createElement("div");r.className="hub-row";r.innerHTML="<div><b>"+escapeHtml(p.name)+"</b><small>"+escapeHtml(p.kind)+"</small></div>";const b=document.createElement("button");b.className="small secondary";b.textContent="View";b.onclick=()=>{$("feature-center-dialog").classList.add("hidden");map.setView([p.latitude,p.longitude],17);};r.append(b);box.append(r);});}catch(e){$( "ota-places-list").textContent=e.message;}}
+async function otaRenderMeetups(){try{const rows=await trackitApi.rpc("trackit_list_meetups",{p_token:token})||[];const box=$( "ota-meetups-list");box.innerHTML=rows.length?"":"<div class='empty'>No meetups yet.</div>";rows.forEach(m=>{const r=document.createElement("div");r.className="hub-row";r.innerHTML="<div><b>"+escapeHtml(m.title)+"</b><small>"+escapeHtml(m.owner_username)+" • "+m.member_count+" people"+(m.starts_at?" • "+new Date(m.starts_at).toLocaleString():"")+"</small></div>";const b=document.createElement("button");b.className="small secondary";b.textContent="View";b.onclick=()=>{$("feature-center-dialog").classList.add("hidden");map.setView([m.latitude,m.longitude],17);};r.append(b);box.append(r);});}catch(e){$( "ota-meetups-list").textContent=e.message;}}
+async function otaRenderGroups(){try{const rows=await trackitApi.rpc("trackit_list_groups",{p_token:token})||[];const box=$( "ota-groups-list");box.innerHTML=rows.length?"":"<div class='empty'>No groups yet.</div>";rows.forEach(g=>{const r=document.createElement("div");r.className="hub-row";r.innerHTML="<div><b>"+escapeHtml(g.name)+"</b><small>"+g.member_count+" members</small></div>";box.append(r);});}catch(e){$( "ota-groups-list").textContent=e.message;}}
+async function otaRenderDevice(){const b=navigator.getBattery?await navigator.getBattery().catch(()=>null):null;const pct=b?Math.round(b.level*100):null;const ua=navigator.userAgent;const platform=/iPad|iPhone/.test(ua)?"iOS":(/Android/.test(ua)?"Android":"Web");const info=$( "ota-device-info");if(info)info.innerHTML="<b>"+platform+"</b><br><small>"+escapeHtml(ua)+"</small><br><br>"+(pct==null?"🔋 Battery API unavailable":"🔋 Battery "+pct+"%"+(b.charging?" • charging":""))+"<br>📐 Screen "+screen.width+" × "+screen.height+"<br>🌐 Online "+(navigator.onLine?"Yes":"No");if(b){b.addEventListener("levelchange",otaRenderDevice,{once:true});b.addEventListener("chargingchange",otaRenderDevice,{once:true});}updateOwnDeviceStatus();}
+function otaRenderHistory(){const rows=otaRead(OTA_HISTORY_KEY,[]),box=$( "ota-history-list");if(!box)return;box.innerHTML="";if(!rows.length){box.innerHTML='<div class="empty">No local history yet. Start sharing or use Find me.</div>';return;}rows.slice(-30).reverse().forEach(x=>{const r=document.createElement("div");r.className="hub-row";r.innerHTML="<div><b>"+new Date(x.at).toLocaleString()+"</b><small>"+x.lat.toFixed(5)+", "+x.lng.toFixed(5)+" • ±"+Math.round(x.accuracy||0)+" m</small></div>";const b=document.createElement("button");b.className="small secondary";b.textContent="View";b.onclick=()=>{ $("feature-center-dialog").classList.add("hidden");map.setView([x.lat,x.lng],17);};r.append(b);box.append(r);});}
+function otaSaveHistory(c){const rows=otaRead(OTA_HISTORY_KEY,[]);rows.push({at:new Date().toISOString(),lat:c.latitude,lng:c.longitude,accuracy:c.accuracy||0});otaWrite(OTA_HISTORY_KEY,rows.slice(-200));}
+function otaRenderPins(){const rows=otaRead(OTA_PINS_KEY,[]),box=$( "ota-pins-list");if(!box)return;box.innerHTML="";if(!rows.length){box.innerHTML='<div class="empty">No custom pins yet.</div>';return;}rows.forEach((p,i)=>{const r=document.createElement("div");r.className="hub-row ota-pin-row";const d=document.createElement("div");d.innerHTML="<b>"+escapeHtml(p.name)+"</b><small>"+p.lat.toFixed(5)+", "+p.lng.toFixed(5)+"</small>";const b=document.createElement("button");b.className="small secondary";b.textContent="View";b.onclick=()=>{map.setView([p.lat,p.lng],17);};const del=document.createElement("button");del.className="small danger-outline";del.textContent="Delete";del.onclick=()=>{const a=otaRead(OTA_PINS_KEY,[]);a.splice(i,1);otaWrite(OTA_PINS_KEY,a);otaRenderPins();};const bs=document.createElement("span");bs.append(b,del);r.append(d,bs);box.append(r);});}
+async function otaDropPin(){try{const p=await currentCoords();const name=prompt("Name this pin:","My place");if(!name)return;const rows=otaRead(OTA_PINS_KEY,[]);rows.push({name:name.slice(0,60),lat:p.coords.latitude,lng:p.coords.longitude});otaWrite(OTA_PINS_KEY,rows.slice(-50));const m=L.marker([p.coords.latitude,p.coords.longitude]).addTo(map);m.bindPopup(popupElement(name,"Private map pin")).openPopup();otaRenderPins();}catch(e){alert(e.message);}}
+function otaClearPins(){if(!confirm("Clear all of your private map pins on this device?"))return;otaWrite(OTA_PINS_KEY,[]);otaRenderPins();}
+function otaDistanceToFriend(){const opts=[...$("find-friend").options].slice(1);const friend=opts.find(o=>{const f=friendMarkers.get(o.value);return f;});if(!friend){$( "ota-distance").textContent="Choose a friend with a location to see distance and direction.";return;}const marker=friendMarkers.get(friend.value);if(!marker||!myMarker){$( "ota-distance").textContent="Start sharing or use Find me first, then choose a friend.";return;}const a=myMarker.getLatLng(),b=marker.getLatLng(),rad=Math.PI/180;const dLat=(b.lat-a.lat)*rad,dLon=(b.lng-a.lng)*rad;const h=Math.sin(dLat/2)**2+Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dLon/2)**2;const km=6371*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));const bearing=(Math.atan2(Math.sin(dLon)*Math.cos(b.lat*rad),Math.cos(a.lat*rad)*Math.sin(b.lat*rad)-Math.sin(a.lat*rad)*Math.cos(b.lat*rad)*Math.cos(dLon))/rad+360)%360;const dirs=["N","NE","E","SE","S","SW","W","NW"];const dir=dirs[Math.round(bearing/45)%8];$( "ota-distance").textContent="Nearest friend with a location: "+friend.textContent.split(" • ")[0]+" • "+(km<1?Math.round(km*1000)+" m":km.toFixed(1)+" km")+" away • "+dir;}
+function otaRenderProfile(){const pic=localStorage.getItem("trackit_profile_pic");const box=$( "ota-avatar-preview");const name=$( "ota-profile-name");if(name)name.textContent=username||"Trackit user";if(pic&&box){box.innerHTML="";const img=document.createElement("img");img.src=pic;box.append(img);}else if(box)box.textContent=(username||"T").slice(0,1).toUpperCase();}
+async function otaMapSearch(q){const box=$( "ota-map-search-results");box.innerHTML='<div class="ota-loading">Searching OpenStreetMap…</div>';try{const r=await fetch("https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&q="+encodeURIComponent(q),{headers:{Accept:"application/json"}});const rows=await r.json();box.innerHTML="";if(!rows.length){box.innerHTML='<div class="empty">No places found.</div>';return;}rows.forEach(x=>{const row=document.createElement("div");row.className="hub-row";const d=document.createElement("div");d.innerHTML="<b>"+escapeHtml(x.display_name.split(",").slice(0,2).join(", "))+"</b><small>"+escapeHtml(x.display_name)+"</small>";const b=document.createElement("button");b.className="small secondary";b.textContent="View";b.onclick=()=>{map.setView([Number(x.lat),Number(x.lon)],16);map.once("click",()=>{});$("feature-center-dialog").classList.add("hidden");};row.append(d,b);box.append(row);});}catch(e){box.innerHTML='<div class="error">Map search failed. Try again.</div>';}}
+function otaBind(){
+  $("feature-center-open").onclick=otaOpen;$("feature-center-close").onclick=otaClose;$("feature-center-dialog").onclick=e=>{if(e.target===$("feature-center-dialog"))otaClose()};
+  document.querySelectorAll("[data-ota-feature]").forEach(b=>b.onclick=()=>{otaOpen();otaShowSection(b.dataset.otaFeature);});
+  $("ota-friend-search").oninput=e=>otaRenderSearch(e.target.value);
+  $("ota-safe-home").onclick=()=>otaSafetyStatus("I'm home");$("ota-safe-school").onclick=()=>otaSafetyStatus("I'm at school");$("ota-safe-way").onclick=()=>otaSafetyStatus("I'm on my way");
+  $("ota-safe-timer").onclick=async()=>{const mins=Number(prompt("How many minutes should the safety timer run?","30"));if(!Number.isFinite(mins)||mins<=0)return;try{await trackitApi.rpc("trackit_create_safety_timer",{p_token:token,p_label:"Check in",p_expires_at:new Date(Date.now()+mins*60000).toISOString()});otaRenderSafety();}catch(e){$( "ota-safety-message").textContent=e.message;}};
+  $("ota-place-form").onsubmit=async e=>{e.preventDefault();try{const p=await currentCoords();await trackitApi.rpc("trackit_create_place",{p_token:token,p_name:$( "ota-place-name").value.trim(),p_latitude:p.coords.latitude,p_longitude:p.coords.longitude,p_kind:$( "ota-place-kind").value});$( "ota-place-name").value="";otaRenderPlaces();}catch(err){alert(err.message);}};
+  $("ota-meetup-form").onsubmit=async e=>{e.preventDefault();try{const p=await currentCoords();const t=$( "ota-meetup-time").value?new Date($( "ota-meetup-time").value).toISOString():null;const ids=otaFriends().map(x=>x.id);await trackitApi.rpc("trackit_create_meetup",{p_token:token,p_title:$( "ota-meetup-title").value.trim(),p_latitude:p.coords.latitude,p_longitude:p.coords.longitude,p_starts_at:t,p_friend_ids:ids});$( "ota-meetup-title").value="";otaRenderMeetups();}catch(err){alert(err.message);}};
+  $("ota-group-form").onsubmit=async e=>{e.preventDefault();try{const ids=otaFriends().map(x=>x.id);await trackitApi.rpc("trackit_create_group",{p_token:token,p_name:$( "ota-group-name").value.trim(),p_friend_ids:ids});$( "ota-group-name").value="";otaRenderGroups();}catch(err){alert(err.message);}};
+  $("ota-device-refresh").onclick=otaRenderDevice;
+  $("ota-history-clear").onclick=()=>{if(confirm("Clear your local location history?")){otaWrite(OTA_HISTORY_KEY,[]);otaRenderHistory();}};
+  $("ota-drop-pin").onclick=otaDropPin;$("ota-clear-pins").onclick=otaClearPins;
+  $("ota-map-search-form").onsubmit=e=>{e.preventDefault();const q=$( "ota-map-search").value.trim();if(q)otaMapSearch(q);};
+  $("ota-avatar-input").onchange=e=>{const file=e.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{localStorage.setItem("trackit_profile_pic",reader.result);otaRenderProfile();};reader.readAsDataURL(file);};
+  $("ota-avatar-clear").onclick=()=>{localStorage.removeItem("trackit_profile_pic");otaRenderProfile();};
+  $("ota-privacy-button").onclick=()=>alert("Trackit shares your location only when you start sharing or send an SOS. Friends only see locations allowed by your sharing settings. Private pins, profile picture and local location history are stored on this device.");
+  $("ota-share-button").onclick=async()=>{const url=location.origin+location.pathname;try{if(navigator.share)await navigator.share({title:"Trackit",text:"Join me on Trackit",url});else{await navigator.clipboard.writeText(url);$( "ota-share-message").textContent="Trackit link copied.";}}catch{}};
+  window.addEventListener("online",()=>{const el=$( "ota-device-info");if(el)otaRenderDevice();});
+}
+function otaRecordPosition(position){otaSaveHistory(position.coords);}
+
 function setupAppNavigation() {
   const pages = {
     home: $("tab-home"),
@@ -992,6 +1173,7 @@ async function init() {
   bindSettings();
   setupAppNavigation();
   loadNotifications();
+  otaBind();
   loadTrackitVersion();
 
   if ("serviceWorker" in navigator) {
