@@ -13,7 +13,7 @@
   <header class="top">
     <div>
       <h1>Trackit</h1>
-      <div id="account" class="top-subtitle"></div>
+      <div id="account" class="top-subtitle"></div><div id="trackit-version" class="top-subtitle">Trackit 4.0.1 • OTA</div>
     </div>
     <div class="top-actions"><button id="settings-open" class="small" aria-label="Open settings">⚙️ Settings</button><button id="out" class="small">Log out</button></div>
   </header>
@@ -804,7 +804,7 @@ function bindTrackitFeatures(){
   $( "privacy-pause").onclick=()=>stopSharing().then(()=>$( "privacy-message").textContent="Location sharing paused.");
   $( "privacy-info").onclick=()=>alert("Trackit shares your location only when you start sharing or send an SOS. Friends only see locations through an active friend connection. You can stop sharing at any time.");
 }
-\nasync function init() {
+\nasync function loadTrackitVersion(){try{const r=await fetch("trackit-version.json?"+Date.now());const v=await r.json();$("trackit-version").textContent="Trackit "+v.version+" • OTA";}catch{}}\n\nasync function init() {
   if (!(await checkSession())) return;
 
   const { data } = await supabase.rpc("my_location_status", { p_token: token });
@@ -815,7 +815,7 @@ function bindTrackitFeatures(){
 
   await refreshFriends();
   if (settings.refresh) refreshTimer = setInterval(refreshFriends, 10000);
-  bindSettings();\n  loadNotifications();
+  bindSettings();\n  loadNotifications();\n  loadTrackitVersion();
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
