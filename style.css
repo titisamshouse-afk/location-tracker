@@ -179,3 +179,12 @@ html[data-theme="dark"] .favorite-chats-card{background:#111827;border-color:#37
 html[data-theme="dark"] .favorite-chat-row{background:#172033;border-color:#374151}
 html[data-theme="dark"] .favorite-star-btn{background:#172033;color:#9ca3af;border-color:#374151}
 html[data-theme="dark"] .favorite-star-btn.active{color:#fbbf24;background:#3a2d14;border-color:#b7791f}
+
+/* Safety Center family quick access */
+.ota-safety-family{border:1px solid #e5e7eb;border-radius:14px;padding:11px;margin:8px 0 10px;background:#fafafa}
+.ota-safety-family-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}
+.family-quick-row{margin-top:6px}
+.quick-sos-button{width:100%;border:0;border-radius:14px;background:#b91c1c;color:#fff;font-weight:900;font-size:17px;padding:14px;box-shadow:0 4px 12px #b91c1c33}
+.quick-sos-button:active{transform:scale(.98)}
+.quick-sos-note{font-size:12px;margin:6px 2px 10px}
+html[data-theme="dark"] .ota-safety-family{background:#172033;border-color:#374151}
