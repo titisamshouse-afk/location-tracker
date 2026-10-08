@@ -1,6 +1,6 @@
 {
-  "version": "4.1.1",
+  "version": "4.1.2",
   "name": "Trackit",
   "releaseType": "ota",
-  "notes": "Trackit OTA 4.1.0: OTA language system with English, Spanish, French, German, Italian, Portuguese, Japanese, Korean, Chinese, and Russian translation files. Added Parent-to-Kid conversion by exact username/display name."
+  "notes": "Trackit OTA 4.1.0: OTA language system with English, Spanish, French, German, Italian, Portuguese, Japanese, Korean, Chinese, and Russian translation files. Added Parent-to-Kid conversion by exact username/display name. Fixed mobile navigation and moved Account into an Account menu."
 }
