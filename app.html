@@ -1236,7 +1236,7 @@ async function saveSelectedParentKid(){
   const msg=$("parent-kid-message");msg.textContent="Saving…";
   try{
     await trackitApi.rpc("parent_update_kid",{p_token:token,p_kid_trackit_id:selectedParentKid.trackit_id,p_display_name:$("parent-kid-display").value,p_theme:$("parent-kid-theme").value,p_show_last_known:$("parent-kid-last-known").checked,p_location_sharing_enabled:$("parent-kid-sharing").checked,p_sos_enabled:$("parent-kid-sos").checked});
-    await loadParentKids();$("parent-kid-select").value=selectedParentKid.trackit_id;selectedParentKid=parentKids.find(k=>k.trackit_id===selectedParentKid.trackit_id)||null;showSelectedParentKid();msg.textContent="Kid settings saved.";
+    const savedId=selectedParentKid.trackit_id;await loadParentKids();$("parent-kid-select").value=savedId;showSelectedParentKid();msg.textContent="Kid settings saved.";
   }catch(e){msg.textContent=e.message;}
 }
 function bindFamilyTools(){
