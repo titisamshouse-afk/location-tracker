@@ -1733,6 +1733,15 @@ init();
     document.querySelectorAll("#trackit-bottom-nav .bottom-tab").forEach(function(b){
       b.classList.toggle("active",b.getAttribute("data-tab")==="account");
     });
+    // Populate the identity immediately from the saved signed-in username,
+    // then refresh it from Supabase. Never leave the user-facing name as "Account".
+    const savedUser=localStorage.getItem("lt_user")||"";
+    const immediateName=byId("account-menu-name"), immediateSub=byId("account-menu-sub"), immediateTop=byId("account");
+    if(savedUser){
+      if(immediateName)immediateName.textContent=savedUser;
+      if(immediateSub)immediateSub.textContent="Signed in as "+savedUser;
+      if(immediateTop)immediateTop.textContent="Signed in as "+savedUser;
+    }
     loadIdentity();
   }
   function openSettingsDirect(){
@@ -1744,8 +1753,15 @@ init();
     const t=token(), client=window.TrackitSupabase;
     if(!t||!client)return;
     try{
-      const {data,error}=await client.rpc("account_family_info",{p_token:t});
-      if(error)throw error;
+      let {data,error}=await client.rpc("account_family_info",{p_token:t});
+      // If family/account preferences fail, still load the identity through the
+      // simpler current_account RPC so the Account screen can show the username.
+      if(error){
+        const fallback=await client.rpc("current_account",{p_token:t});
+        if(fallback.error)throw error;
+        data={username:fallback.data?.username||localStorage.getItem("lt_user")||""};
+        error=null;
+      }
       const name=data?.display_name||data?.username||localStorage.getItem("lt_user")||"Account";
       const username=data?.username||localStorage.getItem("lt_user")||"";
       if(username)localStorage.setItem("lt_user",username);
