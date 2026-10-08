@@ -1,4 +1,4 @@
-const CACHE="trackit-v12";
+const CACHE="trackit-v13";
 const ASSETS=["./login.html","./create-account.html","./app.html","./style.css","./ota-languages.css","./ota-languages.js","./manifest.json","./icon-192.png","./icon-512.png","./locales/en.json","./locales/es.json","./locales/fr.json","./locales/de.json","./locales/it.json","./locales/pt.json","./locales/ja.json","./locales/ko.json","./locales/zh.json","./locales/ru.json"];
 
 self.addEventListener("install",event=>{
