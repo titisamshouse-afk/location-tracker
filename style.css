@@ -188,3 +188,16 @@ html[data-theme="dark"] .favorite-star-btn.active{color:#fbbf24;background:#3a2d
 .quick-sos-button:active{transform:scale(.98)}
 .quick-sos-note{font-size:12px;margin:6px 2px 10px}
 html[data-theme="dark"] .ota-safety-family{background:#172033;border-color:#374151}
+
+/* Trackit Parent/Kid OTA styles */
+.auth-role-picker,.account-type-grid,.family-account-panel,.family-subpanel,.family-id-card,.family-selected-kid{margin-top:16px}
+.role-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.role-buttons .active{font-weight:800;outline:2px solid currentColor}
+.account-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.account-type-option{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid currentColor;border-radius:12px;cursor:pointer}
+.account-type-option small{opacity:.75}
+.family-id-card{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;border:1px solid currentColor;border-radius:14px}
+.trackit-id-value{font-size:1.45rem;font-weight:900;letter-spacing:.18em}
+.family-subpanel{padding:14px;border:1px solid currentColor;border-radius:14px}
+.family-selected-kid{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px;border:1px solid currentColor}
+@media(max-width:600px){.account-type-grid{grid-template-columns:1fr}.role-buttons{grid-template-columns:1fr}.family-id-card{align-items:flex-start;flex-direction:column}}
