@@ -1308,7 +1308,7 @@ function otaBindFriendTags(){const b=$( "friend-tag-create");if(b)b.onclick=()=>
 let familyAccountInfo=null;
 let parentKids=[];
 let selectedParentKid=null;
-async async function loadFamilyAccountInfo(){
+async function loadFamilyAccountInfo(){
   try{
     familyAccountInfo=await trackitApi.rpc("account_family_info",{p_token:token});
     const panel=$("family-account-panel"), id=$("my-trackit-id");
