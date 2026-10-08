@@ -1671,7 +1671,8 @@ init();
       const msg=document.getElementById("delete-account-message");
       if(msg)msg.textContent="Deleting your account…";
       try{
-        await trackitApi.rpc("delete_my_account",{p_token:token});
+        const { data: deleteData, error: deleteError } = await supabase.rpc("delete_my_account",{p_token:token});
+        if(deleteError) throw deleteError;
         localStorage.removeItem("lt_token");
         localStorage.removeItem("lt_user");
         localStorage.removeItem("lt_username");
