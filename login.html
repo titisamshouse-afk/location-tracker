@@ -1,2 +1,22 @@
-<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Location Tracker Login</title><link rel="stylesheet" href="style.css"><main class="auth"><section class="card"><h1>Location Tracker</h1><p class="muted">Log in to your account.</p><form id="f"><div class="field"><label>Username</label><input id="u" autocomplete="username" required></div><div class="field"><label>Password</label><input id="p" type="password" autocomplete="current-password" required></div><button class="btn">Log in</button><div id="m"></div></form><a class="link" href="create-account.html">Create an account</a></section></main><script type="module">
-import{createClient}from"https://esm.sh/@supabase/supabase-js@2";const s=createClient("https://qiwfbgswukaixyhlzekw.supabase.co","sb_publishable_bAIMCv0YQnAsWv_ppNzWhQ_uSRRFyTC");if(localStorage.getItem("lt_token"))location="app.html";f.onsubmit=async e=>{e.preventDefault();m.textContent="Logging in...";let{data,error}=await s.rpc("login_account",{p_username:u.value,p_password:p.value});if(error){m.className="error";m.textContent=error.message;return}localStorage.setItem("lt_token",data.token);localStorage.setItem("lt_user",data.username);location="app.html"};</script>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Trackit Login</title><link rel="stylesheet" href="style.css"></head>
+<body><main class="auth"><section class="card">
+<h1>Trackit</h1><p class="muted">Log in to your account.</p>
+<div class="auth-role-picker"><b>Account login</b><div class="role-buttons"><button type="button" id="standard-mode" class="secondary active">👤 Standard / Kid</button><button type="button" id="parent-mode" class="secondary">👨‍👩‍👧 Parent</button></div><div id="role-help" class="muted">Kid accounts can be linked to a parent account.</div></div>
+<form id="f"><div class="field"><label>Username</label><input id="u" autocomplete="username" required></div><div class="field"><label>Password</label><input id="p" type="password" autocomplete="current-password" required></div><button class="btn">Log in</button><div id="m"></div></form>
+<a class="link" href="create-account.html">Create an account</a>
+</section></main>
+<script type="module">
+import{createClient}from"https://esm.sh/@supabase/supabase-js@2";
+const s=createClient("https://qiwfbgswukaixyhlzekw.supabase.co","sb_publishable_bAIMCv0YQnAsWv_ppNzWhQ_uSRRFyTC");
+let parentMode=false;
+const setMode=v=>{parentMode=v;standardMode.classList.toggle("active",!v);parentModeBtn.classList.toggle("active",v);roleHelp.textContent=v?"Parent mode: this login must be a Parent account.":"Kid accounts can be linked to a parent account."};
+const standardMode=document.getElementById("standard-mode"),parentModeBtn=document.getElementById("parent-mode"),roleHelp=document.getElementById("role-help");
+standardMode.onclick=()=>setMode(false);parentModeBtn.onclick=()=>setMode(true);
+if(localStorage.getItem("lt_token"))location="app.html";
+f.onsubmit=async e=>{e.preventDefault();m.textContent="Logging in...";
+let{data,error}=await s.rpc("login_account",{p_username:u.value,p_password:p.value});
+if(error){m.className="error";m.textContent=error.message;return}
+if(parentMode&&data?.account_type!=="parent"){m.className="error";m.textContent="This is not a Parent account. Choose Standard / Kid or use a Parent account.";return}
+localStorage.setItem("lt_token",data.token);localStorage.setItem("lt_user",data.username);location="app.html"};
+</script></body></html>
