@@ -75,6 +75,19 @@
         </div>
         <button id="account-settings-button" class="account-menu-button">⚙️ Settings <span>›</span></button>
         <button id="account-logout-button" class="account-menu-button danger-account">↪️ Log out <span>›</span></button>
+<div id="family-account-panel" class="family-account-panel hidden">
+  <div class="family-id-card"><div><h3>🆔 Your Trackit ID</h3><div id="my-trackit-id" class="trackit-id-value">Loading…</div><div class="muted">Share this ID only with people you trust.</div></div><button id="copy-trackit-id" class="secondary">Copy ID</button></div>
+  <div id="kid-customization" class="family-subpanel hidden"><h3>🧒 Kid customization</h3><div class="muted">Customize your own Trackit experience.</div>
+    <div class="field"><label for="kid-self-name">Display name</label><input id="kid-self-name" maxlength="50" placeholder="Your display name"></div>
+    <label class="setting-row"><span><b>Theme</b><small>Choose your Trackit theme.</small></span><select id="kid-self-theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+    <label class="setting-row"><span><b>Show last-known locations</b><small>Keep friends' last locations visible.</small></span><input id="kid-self-last-known" type="checkbox"></label>
+    <label class="setting-row"><span><b>Allow location sharing</b><small>Control whether your Trackit sharing can be used.</small></span><input id="kid-self-sharing" type="checkbox"></label>
+    <label class="setting-row"><span><b>Allow SOS</b><small>Keep the SOS feature available on your account.</small></span><input id="kid-self-sos" type="checkbox"></label>
+    <button id="kid-self-save" class="setting-button">Save my customization</button><div id="kid-self-message" class="muted"></div>
+  </div>
+  <button id="parent-manage-button" class="account-menu-button hidden">👨‍👩‍👧 Manage Kids <span>›</span></button>
+</div>
+
       </div>
     </section>
   </div>
@@ -290,6 +303,22 @@
   </div>
 </div>
 
+<div id="parent-manage-dialog" class="dialog hidden" role="dialog" aria-modal="true" aria-labelledby="parent-manage-title">
+  <div class="dialog-card settings-card"><div class="dialog-head"><h2 id="parent-manage-title">👨‍👩‍👧 Manage Kids</h2><button id="parent-manage-close" class="icon-btn" aria-label="Close">×</button></div>
+    <div class="family-id-card"><div><b>Link a Kid account</b><div class="muted">Enter the Kid's unique Trackit ID.</div></div></div>
+    <form id="parent-link-form" class="inline-form"><input id="parent-kid-id-input" maxlength="8" placeholder="8-character Kid ID" required><button class="btn">Link Kid</button></form><div id="parent-link-message" class="muted"></div>
+    <div class="settings-section"><h3>Select a Kid</h3><select id="parent-kid-select"><option value="">Choose a linked Kid…</option></select></div>
+    <div id="parent-kid-controls" class="hidden">
+      <div class="family-selected-kid"><b id="parent-selected-kid-name"></b><span id="parent-selected-kid-id" class="hub-badge"></span></div>
+      <div class="field"><label for="parent-kid-display">Display name</label><input id="parent-kid-display" maxlength="50"></div>
+      <label class="setting-row"><span><b>Theme</b><small>Set the Kid account theme.</small></span><select id="parent-kid-theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+      <label class="setting-row"><span><b>Show last-known locations</b></span><input id="parent-kid-last-known" type="checkbox"></label>
+      <label class="setting-row"><span><b>Allow location sharing</b></span><input id="parent-kid-sharing" type="checkbox"></label>
+      <label class="setting-row"><span><b>Allow SOS</b></span><input id="parent-kid-sos" type="checkbox"></label>
+      <button id="parent-kid-save" class="setting-button">Save Kid settings</button><div id="parent-kid-message" class="muted"></div>
+    </div>
+  </div>
+</div>
 </main>
 
 <div id="settings-dialog" class="dialog hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
@@ -1154,6 +1183,73 @@ function otaTagChip(tag){return '<span class="friend-tag-chip">'+tag.icon+" "+es
 function otaRenderFriendTags(){const box=$( "friend-tag-list"),filter=$( "friend-tag-filter");if(!box||!filter)return;const friends=otaFriends(),assigned=otaFriendTags();filter.innerHTML='<button class="tag-filter-button active" data-tag-filter="all">All</button>'+otaAllTags().map(t=>'<button class="tag-filter-button" data-tag-filter="'+escapeHtml(t.id)+'">'+t.icon+" "+escapeHtml(t.name)+'</button>').join("");const active="all";box.innerHTML="";if(!friends.length){box.innerHTML='<div class="empty">Add friends first, then assign categories.</div>';return;}friends.forEach(fr=>{const tags=assigned[fr.id]||[];const row=document.createElement("div");row.className="friend-tag-item";const head=document.createElement("div");head.className="friend-tag-head";const title=document.createElement("b");title.textContent=fr.label.split(" • ")[0];const chips=document.createElement("div");chips.className="friend-tag-chips";tags.forEach(id=>{const t=otaAllTags().find(x=>x.id===id);if(t)chips.insertAdjacentHTML("beforeend",otaTagChip(t));});if(!tags.length)chips.innerHTML='<span class="muted">No tags</span>';head.append(title,chips);const controls=document.createElement("div");controls.className="friend-tag-controls";otaAllTags().forEach(t=>{const b=document.createElement("button");b.className="small secondary";b.textContent=t.icon+" "+t.name;b.onclick=()=>{const a=otaFriendTags();const list=new Set(a[fr.id]||[]);if(list.has(t.id))list.delete(t.id);else list.add(t.id);a[fr.id]=[...list];otaSaveFriendTags(a);otaRenderFriendTags();};controls.append(b);});row.append(head,controls);box.append(row);});filter.querySelectorAll("button").forEach(b=>b.onclick=()=>{filter.querySelectorAll("button").forEach(x=>x.classList.remove("active"));b.classList.add("active");const id=b.dataset.tagFilter;box.querySelectorAll(".friend-tag-item").forEach(row=>{if(id==="all"){row.style.display="" ;return;}const name=row.querySelector("b")?.textContent;const fr=friends.find(x=>x.label.split(" • ")[0]===name);row.style.display=(fr&&(assigned[fr.id]||[]).includes(id))?"":"none";});});}
 function otaBindFriendTags(){const b=$( "friend-tag-create");if(b)b.onclick=()=>{const name=prompt("Name your custom tag:","Close Friends");if(!name?.trim())return;const custom=otaRead("trackit_custom_tags_v1",[]);const id=name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||("tag-"+Date.now());if(otaAllTags().some(t=>t.id===id)){alert("That tag already exists.");return;}custom.push({id,name:name.trim().slice(0,30),icon:"🏷️"});otaWrite("trackit_custom_tags_v1",custom);otaRenderFriendTags();};otaRenderFriendTags();}
 
+/* Trackit Parent/Kid family tools */
+let familyAccountInfo=null;
+let parentKids=[];
+let selectedParentKid=null;
+async function loadFamilyAccountInfo(){
+  try{
+    familyAccountInfo=await trackitApi.rpc("account_family_info",{p_token:token});
+    const panel=$("family-account-panel"), id=$("my-trackit-id");
+    if(!panel)return;
+    panel.classList.remove("hidden");
+    if(id)id.textContent=familyAccountInfo.trackit_id||"Unavailable";
+    const kidBox=$("kid-customization"), parentBtn=$("parent-manage-button");
+    if(familyAccountInfo.account_type==="kid"){kidBox?.classList.remove("hidden");parentBtn?.classList.add("hidden");populateKidCustomization();}
+    else if(familyAccountInfo.account_type==="parent"){parentBtn?.classList.remove("hidden");kidBox?.classList.add("hidden");}
+    else {kidBox?.classList.add("hidden");parentBtn?.classList.add("hidden");}
+    applyFamilyTheme(familyAccountInfo.theme);
+  }catch(e){console.warn("Family tools unavailable",e);}
+}
+function applyFamilyTheme(theme){if(theme==="dark"||theme==="light")document.documentElement.dataset.theme=theme;else delete document.documentElement.dataset.theme;}
+function populateKidCustomization(){
+  if(!familyAccountInfo)return;
+  $("kid-self-name").value=familyAccountInfo.display_name||familyAccountInfo.username||"";
+  $("kid-self-theme").value=familyAccountInfo.theme||"system";
+  $("kid-self-last-known").checked=!!familyAccountInfo.show_last_known;
+  $("kid-self-sharing").checked=!!familyAccountInfo.location_sharing_enabled;
+  $("kid-self-sos").checked=!!familyAccountInfo.sos_enabled;
+}
+async function saveKidCustomization(){
+  const msg=$("kid-self-message");if(msg)msg.textContent="Saving…";
+  try{
+    familyAccountInfo=await trackitApi.rpc("update_my_preferences",{p_token:token,p_display_name:$("kid-self-name").value,p_theme:$("kid-self-theme").value,p_show_last_known:$("kid-self-last-known").checked,p_location_sharing_enabled:$("kid-self-sharing").checked,p_sos_enabled:$("kid-self-sos").checked});
+    applyFamilyTheme(familyAccountInfo.theme);$("account-tab-name").textContent=familyAccountInfo.display_name||username;
+    if(msg)msg.textContent="Saved.";
+  }catch(e){if(msg)msg.textContent=e.message;}
+}
+async function loadParentKids(){
+  const select=$("parent-kid-select");if(!select)return;
+  try{parentKids=await trackitApi.rpc("parent_list_kids",{p_token:token})||[];}catch(e){parentKids=[];$("parent-link-message").textContent=e.message;}
+  select.innerHTML='<option value="">Choose a linked Kid…</option>';
+  parentKids.forEach(k=>{const o=document.createElement("option");o.value=k.trackit_id;o.textContent=(k.display_name||k.username)+" • "+k.trackit_id;select.appendChild(o);});
+  selectedParentKid=null;$("parent-kid-controls")?.classList.add("hidden");
+}
+function showSelectedParentKid(){
+  const id=$("parent-kid-select").value;selectedParentKid=parentKids.find(k=>k.trackit_id===id)||null;
+  const box=$("parent-kid-controls");if(!selectedParentKid){box?.classList.add("hidden");return;}
+  box?.classList.remove("hidden");$("parent-selected-kid-name").textContent=selectedParentKid.display_name||selectedParentKid.username;$("parent-selected-kid-id").textContent=selectedParentKid.trackit_id;
+  $("parent-kid-display").value=selectedParentKid.display_name||selectedParentKid.username;$("parent-kid-theme").value=selectedParentKid.theme||"system";$("parent-kid-last-known").checked=!!selectedParentKid.show_last_known;$("parent-kid-sharing").checked=!!selectedParentKid.location_sharing_enabled;$("parent-kid-sos").checked=!!selectedParentKid.sos_enabled;
+}
+async function saveSelectedParentKid(){
+  if(!selectedParentKid)return;
+  const msg=$("parent-kid-message");msg.textContent="Saving…";
+  try{
+    await trackitApi.rpc("parent_update_kid",{p_token:token,p_kid_trackit_id:selectedParentKid.trackit_id,p_display_name:$("parent-kid-display").value,p_theme:$("parent-kid-theme").value,p_show_last_known:$("parent-kid-last-known").checked,p_location_sharing_enabled:$("parent-kid-sharing").checked,p_sos_enabled:$("parent-kid-sos").checked});
+    await loadParentKids();$("parent-kid-select").value=selectedParentKid.trackit_id;selectedParentKid=parentKids.find(k=>k.trackit_id===selectedParentKid.trackit_id)||null;showSelectedParentKid();msg.textContent="Kid settings saved.";
+  }catch(e){msg.textContent=e.message;}
+}
+function bindFamilyTools(){
+  $("copy-trackit-id")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(familyAccountInfo.trackit_id);$("copy-trackit-id").textContent="Copied!";setTimeout(()=>$("copy-trackit-id").textContent="Copy ID",1200);}catch{}});
+  $("kid-self-save")?.addEventListener("click",saveKidCustomization);
+  $("parent-manage-button")?.addEventListener("click",async()=>{$("parent-manage-dialog").classList.remove("hidden");await loadParentKids();});
+  $("parent-manage-close")?.addEventListener("click",()=>$("parent-manage-dialog").classList.add("hidden"));
+  $("parent-manage-dialog")?.addEventListener("click",e=>{if(e.target===$("parent-manage-dialog"))$("parent-manage-dialog").classList.add("hidden");});
+  $("parent-kid-select")?.addEventListener("change",showSelectedParentKid);
+  $("parent-kid-save")?.addEventListener("click",saveSelectedParentKid);
+  $("parent-link-form")?.addEventListener("submit",async e=>{e.preventDefault();const msg=$("parent-link-message");msg.textContent="Linking…";try{const r=await trackitApi.rpc("parent_link_kid",{p_token:token,p_kid_trackit_id:$("parent-kid-id-input").value});$("parent-kid-id-input").value="";msg.textContent="Linked "+r.kid_username+" ("+r.kid_id+").";await loadParentKids();}catch(err){msg.textContent=err.message;}});
+}
+
 function setupAppNavigation() {
   const pages = {
     home: $("tab-home"),
@@ -1195,6 +1291,8 @@ function setupAppNavigation() {
   };
   $("account-settings-button").onclick = openSettings;
   otaBindFriendTags();
+  bindFamilyTools();
+  loadFamilyAccountInfo();
   $("account-logout-button").onclick = () => $("out").click();
 
   async function loadAppChatFriends() {
