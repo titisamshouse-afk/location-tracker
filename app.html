@@ -84,6 +84,12 @@
     <button id="account-menu-logout" class="account-menu-button danger-account">↪️ Log out <span>›</span></button>
     <div id="family-account-panel" class="family-account-panel hidden">
       <div class="family-id-card"><div><h3>🆔 Your Trackit ID</h3><div id="my-trackit-id" class="trackit-id-value">Loading…</div><div class="muted">Share this ID only with people you trust.</div></div><button id="copy-trackit-id" class="secondary">Copy ID</button></div>
+      <div id="family-members-section" class="family-subpanel hidden">
+        <div class="family-members-head">
+          <div><h3>👨‍👩‍👧 Family Group</h3><div class="muted">People linked to your family group and their account type.</div></div>
+        </div>
+        <div id="family-members-list" class="family-members-list"></div>
+      </div>
       <div id="kid-customization" class="family-subpanel hidden"><h3>🧒 Kid customization</h3><div class="muted">Customize your own Trackit experience.</div>
         <div class="field"><label for="kid-self-name">Display name</label><input id="kid-self-name" maxlength="50" placeholder="Your display name"></div>
         <label class="setting-row"><span><b>Theme</b><small>Choose your Trackit theme.</small></span><select id="kid-self-theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
@@ -1308,6 +1314,36 @@ function otaBindFriendTags(){const b=$( "friend-tag-create");if(b)b.onclick=()=>
 let familyAccountInfo=null;
 let parentKids=[];
 let selectedParentKid=null;
+async function loadFamilyMembers(){
+  const section=$("family-members-section"), list=$("family-members-list");
+  if(!section||!list)return;
+  try{
+    const members=await trackitApi.rpc("get_my_family_members",{p_token:token});
+    if(!Array.isArray(members)||members.length<2){
+      section.classList.add("hidden");
+      list.replaceChildren();
+      return;
+    }
+    list.replaceChildren();
+    members.forEach(member=>{
+      const row=document.createElement("div");
+      row.className="family-member-row";
+      const icon=member.account_type==="parent"?"👨‍👩‍👧":"🧒";
+      const role=member.account_type==="parent"?"Parent":member.account_type==="kid"?"Kid":"Standard";
+      row.innerHTML='<div class="family-member-icon">'+icon+'</div><div class="family-member-info"><b></b><small></small></div><span class="family-member-role"></span>';
+      row.querySelector("b").textContent=member.display_name||member.username||"Account";
+      row.querySelector("small").textContent=member.username?"@"+member.username:"";
+      row.querySelector(".family-member-role").textContent=role;
+      list.appendChild(row);
+    });
+    section.classList.remove("hidden");
+  }catch(e){
+    section.classList.add("hidden");
+    list.replaceChildren();
+    console.warn("Family members unavailable",e);
+  }
+}
+
 async function loadFamilyAccountInfo(){
   try{
     familyAccountInfo=await trackitApi.rpc("account_family_info",{p_token:token});
@@ -1329,6 +1365,7 @@ async function loadFamilyAccountInfo(){
     else {kidBox?.classList.add("hidden");parentBtn?.classList.add("hidden");$("account-type-parent-tools")?.classList.add("hidden");$("parent-convert-standard-kid-account")?.classList.add("hidden");}
     applyRemoteAccountSettings(familyAccountInfo);
     applyFamilyTheme(familyAccountInfo.theme);
+    loadFamilyMembers();
   }catch(e){
     const id=$("my-trackit-id");
     if(id)id.textContent="Could not load";
