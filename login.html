@@ -3,7 +3,7 @@
 <body><main class="auth"><section class="card">
 <h1>Trackit</h1><p class="muted">Log in to your account.</p>
 <div class="auth-role-picker"><b>Account login</b><div class="role-buttons"><button type="button" id="standard-mode" class="secondary active">👤 Standard / Kid</button><button type="button" id="parent-mode" class="secondary">👨‍👩‍👧 Parent</button></div><div id="role-help" class="muted">Kid accounts can be linked to a parent account.</div></div>
-<form id="f"><div class="field"><label>Username</label><input id="u" autocomplete="username" required></div><div class="field"><label>Password</label><input id="p" type="password" autocomplete="current-password" required></div><button class="btn">Log in</button><div id="m"></div></form>
+<form id="f"><div class="field"><label>Username</label><input id="u" autocomplete="username" required></div><div id="password-login"><div class="field"><label>Password</label><input id="p" type="password" autocomplete="current-password"></div></div><div id="pin-login" class="hidden"><div class="field"><label>6-digit PIN</label><input id="login-pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off"></div></div><button class="btn">Log in</button><button type="button" class="secondary" id="pin-login-toggle">Log in with PIN</button><div id="m"></div></form>
 <a class="link" href="create-account.html">Create an account</a><a class="parent-create-button" href="create-account.html?type=parent">👨‍👩‍👧 Create Parent Account</a>
 </section></main>
 <script type="module">
@@ -14,8 +14,13 @@ const setMode=v=>{parentMode=v;standardMode.classList.toggle("active",!v);parent
 const standardMode=document.getElementById("standard-mode"),parentModeBtn=document.getElementById("parent-mode"),roleHelp=document.getElementById("role-help");
 standardMode.onclick=()=>setMode(false);parentModeBtn.onclick=()=>setMode(true);
 if(localStorage.getItem("lt_token"))location="app.html";
+let pinMode=false;
+const pinLoginToggle=document.getElementById("pin-login-toggle");
+const pinLogin=document.getElementById("pin-login"), passwordLogin=document.getElementById("password-login");
+pinLoginToggle.onclick=()=>{pinMode=!pinMode;pinLogin.classList.toggle("hidden",!pinMode);passwordLogin.classList.toggle("hidden",pinMode);p.required=!pinMode;document.getElementById("login-pin").required=pinMode;pinLoginToggle.textContent=pinMode?"Log in with password":"Log in with PIN";};
 f.onsubmit=async e=>{e.preventDefault();m.textContent="Logging in...";
-let{data,error}=await s.rpc("login_account",{p_username:u.value,p_password:p.value});
+const result=pinMode?await s.rpc("login_account_with_pin",{p_username:u.value,p_pin:document.getElementById("login-pin").value}):await s.rpc("login_account",{p_username:u.value,p_password:p.value});
+let{data,error}=result;
 if(error){m.className="error";m.textContent=error.message;return}
 if(parentMode&&data?.account_type!=="parent"){m.className="error";m.textContent="This is not a Parent account. Choose Standard / Kid or use a Parent account.";return}
 localStorage.setItem("lt_token",data.token);localStorage.setItem("lt_user",data.username);location="app.html"};
