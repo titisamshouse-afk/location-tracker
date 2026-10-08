@@ -73,30 +73,33 @@
       </div>
     </section>
     <section id="tab-sos" class="tab-page"></section>
-    <section id="tab-account" class="tab-page">
-      <div class="panel account-panel">
-        <div class="account-card">
-          <div class="account-avatar">👤</div>
-          <div><h2 id="account-tab-name">Account</h2><div id="account-tab-sub" class="muted">Signed in</div></div>
-        </div>
-        <button id="account-settings-button" class="account-menu-button">⚙️ Settings <span>›</span></button>
-        <button id="account-logout-button" class="account-menu-button danger-account">↪️ Log out <span>›</span></button>
-<div id="family-account-panel" class="family-account-panel hidden">
-  <div class="family-id-card"><div><h3>🆔 Your Trackit ID</h3><div id="my-trackit-id" class="trackit-id-value">Loading…</div><div class="muted">Share this ID only with people you trust.</div></div><button id="copy-trackit-id" class="secondary">Copy ID</button></div>
-  <div id="kid-customization" class="family-subpanel hidden"><h3>🧒 Kid customization</h3><div class="muted">Customize your own Trackit experience.</div>
-    <div class="field"><label for="kid-self-name">Display name</label><input id="kid-self-name" maxlength="50" placeholder="Your display name"></div>
-    <label class="setting-row"><span><b>Theme</b><small>Choose your Trackit theme.</small></span><select id="kid-self-theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
-    <label class="setting-row"><span><b>Show last-known locations</b><small>Keep friends' last locations visible.</small></span><input id="kid-self-last-known" type="checkbox"></label>
-    <label class="setting-row"><span><b>Allow location sharing</b><small>Control whether your Trackit sharing can be used.</small></span><input id="kid-self-sharing" type="checkbox"></label>
-    <label class="setting-row"><span><b>Allow SOS</b><small>Keep the SOS feature available on your account.</small></span><input id="kid-self-sos" type="checkbox"></label>
-    <button id="kid-self-save" class="setting-button">Save my customization</button><div id="kid-self-message" class="muted"></div>
+    <section id="tab-account" class="tab-page hidden" aria-hidden="true"></section>
   </div>
-  <button id="parent-manage-button" class="account-menu-button hidden">👨‍👩‍👧 Manage Kids <span>›</span></button>
-</div>
 
+<div id="account-menu-dialog" class="dialog hidden" role="dialog" aria-modal="true" aria-labelledby="account-menu-title">
+  <div class="dialog-card settings-card account-menu-card">
+    <div class="dialog-head"><div><h2 id="account-menu-title">👤 Account</h2><div id="account-menu-sub" class="muted">Signed in</div></div><button id="account-menu-close" class="icon-btn" aria-label="Close">×</button></div>
+    <div class="account-menu-identity"><div class="account-avatar">👤</div><div><b id="account-menu-name">Account</b><div class="muted">Your Trackit account</div></div></div>
+    <button id="account-menu-settings" class="account-menu-button">⚙️ Settings <span>›</span></button>
+    <button id="account-menu-logout" class="account-menu-button danger-account">↪️ Log out <span>›</span></button>
+    <div id="family-account-panel" class="family-account-panel hidden">
+      <div class="family-id-card"><div><h3>🆔 Your Trackit ID</h3><div id="my-trackit-id" class="trackit-id-value">Loading…</div><div class="muted">Share this ID only with people you trust.</div></div><button id="copy-trackit-id" class="secondary">Copy ID</button></div>
+      <div id="kid-customization" class="family-subpanel hidden"><h3>🧒 Kid customization</h3><div class="muted">Customize your own Trackit experience.</div>
+        <div class="field"><label for="kid-self-name">Display name</label><input id="kid-self-name" maxlength="50" placeholder="Your display name"></div>
+        <label class="setting-row"><span><b>Theme</b><small>Choose your Trackit theme.</small></span><select id="kid-self-theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+        <label class="setting-row"><span><b>Show last-known locations</b><small>Keep friends' last locations visible.</small></span><input id="kid-self-last-known" type="checkbox"></label>
+        <label class="setting-row"><span><b>Allow location sharing</b><small>Control whether your Trackit sharing can be used.</small></span><input id="kid-self-sharing" type="checkbox"></label>
+        <label class="setting-row"><span><b>Allow SOS</b><small>Keep the SOS feature available on your account.</small></span><input id="kid-self-sos" type="checkbox"></label>
+        <button id="kid-self-save" class="setting-button">Save my customization</button><div id="kid-self-message" class="muted"></div>
       </div>
-    </section>
+      <button id="parent-manage-button" class="account-menu-button hidden">👨‍👩‍👧 Manage Kids <span>›</span></button>
+      <div id="account-type-parent-tools" class="settings-section hidden"><h3>🔄 Account type</h3><div class="muted">If you accidentally created a Parent account, you can convert it back to a Standard account. Your Parent→Kid links will be removed.</div><button id="convert-parent-button-account" class="setting-button danger-setting">Convert Parent to Standard</button><div id="convert-parent-message-account" class="muted"></div></div>
+      <div id="parent-convert-standard-kid-account" class="settings-section hidden"><h3>🧒 Change Standard account to Kid</h3><div class="muted">Parents can change a Standard account to a Kid account by entering that account's exact username or display name. The account will also be linked to you as a Kid account.</div>
+        <form id="parent-convert-kid-form-account" class="inline-form"><input id="parent-convert-kid-name-account" maxlength="80" placeholder="Username or display name" autocomplete="off" required><button class="setting-button" type="submit">Change to Kid</button></form><div id="parent-convert-kid-message-account" class="muted"></div>
+      </div>
+    </div>
   </div>
+</div>
 
   <button id="fullscreen-toggle" class="fullscreen-toggle secondary" type="button" title="Hide Android navigation buttons">⛶ Full screen</button>
 
@@ -1301,8 +1304,8 @@ async function loadFamilyAccountInfo(){
     if(id)id.textContent=familyAccountInfo.trackit_id||"Unavailable";
     const kidBox=$("kid-customization"), parentBtn=$("parent-manage-button");
     if(familyAccountInfo.account_type==="kid"){kidBox?.classList.remove("hidden");parentBtn?.classList.add("hidden");populateKidCustomization();}
-    else if(familyAccountInfo.account_type==="parent"){parentBtn?.classList.remove("hidden");kidBox?.classList.add("hidden");$("parent-convert-section").style.display="";$("parent-convert-standard-kid")?.classList.remove("hidden");}
-    else {kidBox?.classList.add("hidden");parentBtn?.classList.add("hidden");$("parent-convert-section").style.display="none";}
+    else if(familyAccountInfo.account_type==="parent"){parentBtn?.classList.remove("hidden");kidBox?.classList.add("hidden");$("account-type-parent-tools")?.classList.remove("hidden");$("parent-convert-standard-kid-account")?.classList.remove("hidden");}
+    else {kidBox?.classList.add("hidden");parentBtn?.classList.add("hidden");$("account-type-parent-tools")?.classList.add("hidden");$("parent-convert-standard-kid-account")?.classList.add("hidden");}
     applyRemoteAccountSettings(familyAccountInfo);
     applyFamilyTheme(familyAccountInfo.theme);
   }catch(e){console.warn("Family tools unavailable",e);}
@@ -1348,6 +1351,20 @@ async function saveSelectedParentKid(){
   }catch(e){msg.textContent=e.message;}
 }
 function bindFamilyTools(){
+  $("convert-parent-button-account")?.addEventListener("click",async()=>{
+    if(!confirm("Convert this Parent account back to Standard?"))return;
+    const confirmation=prompt("Type exactly: CONVERT TO STANDARD");
+    if(confirmation!=="CONVERT TO STANDARD"){ $("convert-parent-message-account").textContent="Conversion cancelled.";return; }
+    const msg=$("convert-parent-message-account");msg.textContent="Converting…";
+    try{await trackitApi.rpc("convert_parent_to_standard",{p_token:token,p_confirmation:confirmation});msg.textContent="Converted to Standard.";await loadFamilyAccountInfo();}catch(e){msg.textContent=e.message;}
+  });
+  $("parent-convert-kid-form-account")?.addEventListener("submit",async e=>{
+    e.preventDefault();const msg=$("parent-convert-kid-message-account"),name=$("parent-convert-kid-name-account").value.trim();if(!name)return;
+    if(!confirm("Change the Standard account \""+name+"\" to a Kid account and link it to you?"))return;
+    msg.textContent="Changing account…";
+    try{const r=await trackitApi.rpc("parent_convert_standard_to_kid",{p_token:token,p_username_or_name:name});msg.textContent="Changed "+(r.username||name)+" to Kid.";$("parent-convert-kid-name-account").value="";await loadFamilyAccountInfo();}catch(e){msg.textContent=e.message;}
+  });
+
   $("copy-trackit-id")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(familyAccountInfo.trackit_id);$("copy-trackit-id").textContent="Copied!";setTimeout(()=>$("copy-trackit-id").textContent="Copy ID",1200);}catch{}});
   $("kid-self-save")?.addEventListener("click",saveKidCustomization);
   $("parent-manage-button")?.addEventListener("click",async()=>{$("parent-manage-dialog").classList.remove("hidden");await loadParentKids();});
@@ -1377,138 +1394,64 @@ function bindFullscreenButton(){
 }
 
 function setupAppNavigation() {
-  const pages = {
-    home: $("tab-home"),
-    location: $("tab-location"),
-    chat: $("tab-chat"),
-    sos: $("tab-sos"),
-    account: $("tab-account")
-  };
-  const mapEl = $("map");
-  const findPanel = document.querySelector(".find-panel");
-  const headphonesPanel = document.querySelector(".headphones-panel");
-  const mainPanel = [...document.querySelectorAll(".panel")].find(p => p.querySelector("#st"));
-  const sosPanel = document.querySelector(".sos-panel");
+  const pages={home:$("tab-home"),location:$("tab-location"),chat:$("tab-chat"),sos:$("tab-sos"),account:$("tab-account")};
+  const mapEl=$("map"),findPanel=document.querySelector(".find-panel"),headphonesPanel=document.querySelector(".headphones-panel"),mainPanel=[...document.querySelectorAll(".panel")].find(p=>p.querySelector("#st")),sosPanel=document.querySelector(".sos-panel");
+  if(findPanel&&pages.location)pages.location.appendChild(findPanel);
+  if(headphonesPanel&&pages.location)pages.location.appendChild(headphonesPanel);
+  if(mainPanel&&pages.location)pages.location.appendChild(mainPanel);
+  if(mapEl&&pages.location)pages.location.prepend(mapEl);
+  if(sosPanel&&pages.sos)pages.sos.appendChild(sosPanel);
 
-  if (findPanel) pages.location.appendChild(findPanel);
-  if (headphonesPanel) pages.location.appendChild(headphonesPanel);
-  if (mainPanel) pages.location.appendChild(mainPanel);
-  if (mapEl) pages.location.prepend(mapEl);
-  if (sosPanel) pages.sos.appendChild(sosPanel);
-
-  function switchTab(name) {
-    Object.entries(pages).forEach(([key, page]) => page.classList.toggle("hidden", key !== name));
-    document.querySelectorAll(".bottom-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
-    if (name === "location") setTimeout(() => map.invalidateSize(), 50);
-    if (name === "chat") loadAppChatFriends();
-    if (name === "home") renderFavoriteChats();
-    if (name === "account") {
-      $("account-tab-name").textContent = username || "Account";
-      $("account-tab-sub").textContent = username ? "Signed in as " + username : "Signed in";
-    }
+  function openAccountMenu(){
+    document.querySelectorAll(".bottom-tab").forEach(b=>b.classList.toggle("active",b.dataset.tab==="account"));
+    $("account-menu-name").textContent=username||"Account";
+    $("account-menu-sub").textContent=username?"Signed in as "+username:"Signed in";
+    $("account-menu-dialog")?.classList.remove("hidden");
   }
-
-  document.querySelectorAll(".bottom-tab").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
-  document.querySelectorAll("[data-go-tab]").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.goTab)));
-  window.setupAppNavigationSwitchToChat = (friendId) => {
-    switchTab("chat");
-    const select=$( "app-chat-friend");
-    if(select){select.value=String(friendId);select.dispatchEvent(new Event("change"));}
-  };
-  $("account-settings-button").onclick = openSettings;
-  otaBindFriendTags();
-  bindFamilyTools();
-  bindFullscreenButton();
-  loadFamilyAccountInfo();
-  $("account-logout-button").onclick = () => $("out").click();
-
-  async function loadAppChatFriends() {
-    const select = $("app-chat-friend");
-    const old = select.value;
-    select.innerHTML = '<option value="">Choose a friend…</option>';
-    const source = $("find-friend");
-    if (source) [...source.options].slice(1).forEach(o => select.appendChild(o.cloneNode(true)));
-    if ([...select.options].some(o => o.value === old)) select.value = old;
-    updateChatFavoriteButton();
+  function closeAccountMenu(){
+    $("account-menu-dialog")?.classList.add("hidden");
+    document.querySelectorAll(".bottom-tab").forEach(b=>b.classList.toggle("active",b.dataset.tab==="home"));
   }
-
-  let appChatConversationId = null;
-  $("app-chat-open").onclick = async () => {
-    const friendId = $("app-chat-friend").value;
-    if (!friendId) {
-      $("app-chat-status").textContent = "Choose a friend first.";
-      return;
-    }
-    try {
-      const data = await trackitApi.rpc("trackit_get_direct_conversation", {p_token: token, p_friend_id: friendId});
-      appChatConversationId = data.conversation_id;
-      $("app-chat-title").textContent = "Chat with " + ($("app-chat-friend").selectedOptions[0]?.textContent || "Friend");
-      $("app-chat-form").classList.remove("hidden");
-      await loadAppMessages();
-    } catch (e) {
-      $("app-chat-status").textContent = e.message;
-    }
-  };
-
-  async function loadAppMessages() {
-    if (!appChatConversationId) return;
-    try {
-      const rows = (await trackitApi.rpc("trackit_list_messages", {p_token: token, p_conversation_id: appChatConversationId, p_limit: 100}) || []).reverse();
-      const box = $("app-chat-messages");
-      box.innerHTML = "";
-      if (!rows.length) {
-        box.innerHTML = '<div class="empty">No messages yet. Say hello!</div>';
-        return;
-      }
-      rows.forEach(m => {
-        const row = document.createElement("div");
-        row.className = "message " + (m.sender_username === username ? "mine" : "");
-        row.innerHTML = "<b>" + escapeHtml(m.sender_username) + "</b><span>" + escapeHtml(m.body) + "</span><small>" + new Date(m.created_at).toLocaleString() + "</small>";
-        box.appendChild(row);
-      });
-      box.scrollTop = box.scrollHeight;
-    } catch (e) {
-      $("app-chat-status").textContent = e.message;
-    }
+  function switchTab(name){
+    if(name==="account"){openAccountMenu();name="home";}
+    Object.entries(pages).forEach(([key,page])=>{if(page)page.classList.toggle("hidden",key!==name);});
+    document.querySelectorAll(".bottom-tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===name));
+    if(name==="location")setTimeout(()=>{try{map.invalidateSize();}catch{}},50);
+    if(name==="chat")loadAppChatFriends();
+    if(name==="home")renderFavoriteChats();
   }
+  document.querySelectorAll(".bottom-tab").forEach(b=>b.addEventListener("click",e=>{e.preventDefault();switchTab(b.dataset.tab);}));
+  document.querySelectorAll("[data-go-tab]").forEach(b=>b.addEventListener("click",e=>{e.preventDefault();b.dataset.goTab==="account"?openAccountMenu():switchTab(b.dataset.goTab);}));
+  window.setupAppNavigationSwitchToChat=friendId=>{switchTab("chat");const select=$("app-chat-friend");if(select){select.value=String(friendId);select.dispatchEvent(new Event("change"));}};
+  $("account-menu-close")?.addEventListener("click",closeAccountMenu);
+  $("account-menu-dialog")?.addEventListener("click",e=>{if(e.target===$("account-menu-dialog"))closeAccountMenu();});
+  $("account-menu-settings")?.addEventListener("click",()=>{closeAccountMenu();openSettings();});
+  $("account-menu-logout")?.addEventListener("click",()=>$("out")?.click());
+  otaBindFriendTags();bindFamilyTools();bindFullscreenButton();loadFamilyAccountInfo();
 
-  $("app-chat-form").onsubmit = async e => {
-    e.preventDefault();
-    const body = $("app-chat-input").value.trim();
-    if (!body || !appChatConversationId) return;
-    try {
-      await trackitApi.rpc("trackit_send_message", {p_token: token, p_conversation_id: appChatConversationId, p_body: body});
-      $("app-chat-input").value = "";
-      await loadAppMessages();
-    } catch (err) {
-      $("app-chat-status").textContent = err.message;
-    }
-  };
-
-  renderFavoriteChats();
-  switchTab("home");
+  async function loadAppChatFriends(){
+    const select=$("app-chat-friend");if(!select)return;const old=select.value;select.innerHTML='<option value="">Choose a friend…</option>';
+    const source=$("find-friend");if(source)[...source.options].slice(1).forEach(o=>select.appendChild(o.cloneNode(true)));
+    if([...select.options].some(o=>o.value===old))select.value=old;updateChatFavoriteButton();
+  }
+  let appChatConversationId=null;
+  $("app-chat-open").onclick=async()=>{const friendId=$("app-chat-friend").value;if(!friendId){$("app-chat-status").textContent="Choose a friend first.";return;}try{const data=await trackitApi.rpc("trackit_get_direct_conversation",{p_token:token,p_friend_id:friendId});appChatConversationId=data.conversation_id;$("app-chat-title").textContent="Chat with "+($("app-chat-friend").selectedOptions[0]?.textContent||"Friend");$("app-chat-form").classList.remove("hidden");await loadAppMessages();}catch(e){$("app-chat-status").textContent=e.message;}};
+  async function loadAppMessages(){if(!appChatConversationId)return;try{const rows=(await trackitApi.rpc("trackit_list_messages",{p_token:token,p_conversation_id:appChatConversationId,p_limit:100})||[]).reverse();const box=$("app-chat-messages");box.innerHTML="";if(!rows.length){box.innerHTML='<div class="empty">No messages yet. Say hello!</div>';return;}rows.forEach(m=>{const row=document.createElement("div");row.className="message "+(m.sender_username===username?"mine":"");row.innerHTML="<b>"+escapeHtml(m.sender_username)+"</b><span>"+escapeHtml(m.body)+"</span><small>"+new Date(m.created_at).toLocaleString()+"</small>";box.appendChild(row);});box.scrollTop=box.scrollHeight;}catch(e){$("app-chat-status").textContent=e.message;}}
+  $("app-chat-form").onsubmit=async e=>{e.preventDefault();const body=$("app-chat-input").value.trim();if(!body||!appChatConversationId)return;try{await trackitApi.rpc("trackit_send_message",{p_token:token,p_conversation_id:appChatConversationId,p_body:body});$("app-chat-input").value="";await loadAppMessages();}catch(err){$("app-chat-status").textContent=err.message;}};
+  renderFavoriteChats();switchTab("home");
 }
 
-async function init() {
-  if (!(await checkSession())) return;
-
-  const { data } = await supabase.rpc("my_location_status", { p_token: token });
-  if (data?.sharing) {
-    $("st").textContent = "You are sharing your location";
-    $("last-update").textContent = "Press Start sharing to resume live updates";
-  }
-
-  await refreshFriends();
-  if (settings.refresh) refreshTimer = setInterval(refreshFriends, 10000);
-  bindSettings();
-  setupAppNavigation();
-  loadNotifications();
-  otaBind();
-  loadTrackitVersion();
-
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
-  }
+async function init(){
+  if(!(await checkSession()))return;
+  try{setupAppNavigation();}catch(e){console.error("Navigation setup failed",e);}
+  try{const {data}=await supabase.rpc("my_location_status",{p_token:token});if(data?.sharing){$("st").textContent="You are sharing your location";$("last-update").textContent="Press Start sharing to resume live updates";}}catch(e){console.warn("Location status unavailable",e);}
+  try{await refreshFriends();}catch(e){console.warn("Friends refresh unavailable",e);}
+  if(settings.refresh)refreshTimer=setInterval(()=>{refreshFriends().catch(e=>console.warn("Refresh failed",e));},10000);
+  try{bindSettings();}catch(e){console.warn("Settings binding unavailable",e);}
+  try{loadNotifications();}catch(e){console.warn("Notifications unavailable",e);}
+  try{otaBind();}catch(e){console.warn("OTA binding unavailable",e);}
+  try{loadTrackitVersion();}catch(e){console.warn("Version check unavailable",e);}
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 }
 
 window.addEventListener("beforeunload", () => {
