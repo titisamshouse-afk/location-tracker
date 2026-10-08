@@ -1275,9 +1275,9 @@ async function loadFamilyAccountInfo(){
     const kidBox=$("kid-customization"), parentBtn=$("parent-manage-button");
     if(familyAccountInfo.account_type==="kid"){kidBox?.classList.remove("hidden");parentBtn?.classList.add("hidden");populateKidCustomization();}
     else if(familyAccountInfo.account_type==="parent"){parentBtn?.classList.remove("hidden");kidBox?.classList.add("hidden");$("parent-convert-section").style.display="";}
-    else {$("parent-convert-section").style.display="none";}
-    else {kidBox?.classList.add("hidden");parentBtn?.classList.add("hidden");}
-    applyRemoteAccountSettings(familyAccountInfo);\n    applyFamilyTheme(familyAccountInfo.theme);
+    else {kidBox?.classList.add("hidden");parentBtn?.classList.add("hidden");$("parent-convert-section").style.display="none";}
+    applyRemoteAccountSettings(familyAccountInfo);
+    applyFamilyTheme(familyAccountInfo.theme);
   }catch(e){console.warn("Family tools unavailable",e);}
 }
 function applyFamilyTheme(theme){if(theme==="dark"||theme==="light")document.documentElement.dataset.theme=theme;else delete document.documentElement.dataset.theme;}
