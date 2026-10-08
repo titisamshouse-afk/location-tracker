@@ -1709,5 +1709,97 @@ init();
 })();
 </script>
 
+<script>
+(function(){
+  // Final Account control fallback. This is intentionally outside the module so
+  // Account controls still work if another optional Trackit feature throws.
+  function byId(id){return document.getElementById(id);}
+  function token(){return localStorage.getItem("lt_token")||"";}
+  function closeAccount(){
+    const d=byId("account-menu-dialog");
+    if(d)d.classList.add("hidden");
+    document.querySelectorAll("#trackit-bottom-nav .bottom-tab").forEach(function(b){
+      b.classList.toggle("active",b.getAttribute("data-tab")==="home");
+    });
+  }
+  function openAccount(){
+    const d=byId("account-menu-dialog");
+    if(d)d.classList.remove("hidden");
+    document.querySelectorAll("#trackit-bottom-nav .bottom-tab").forEach(function(b){
+      b.classList.toggle("active",b.getAttribute("data-tab")==="account");
+    });
+    loadIdentity();
+  }
+  function openSettingsDirect(){
+    closeAccount();
+    const d=byId("settings-dialog");
+    if(d)d.classList.remove("hidden");
+  }
+  async function loadIdentity(){
+    const t=token(), client=window.TrackitSupabase;
+    if(!t||!client)return;
+    try{
+      const {data,error}=await client.rpc("account_family_info",{p_token:t});
+      if(error)throw error;
+      const name=data?.display_name||data?.username||localStorage.getItem("lt_user")||"Account";
+      const username=data?.username||localStorage.getItem("lt_user")||"";
+      if(username)localStorage.setItem("lt_user",username);
+      const n=byId("account-menu-name"), sub=byId("account-menu-sub"), top=byId("account");
+      if(n)n.textContent=name;
+      if(sub)sub.textContent=username?"Signed in as "+username:"Signed in";
+      if(top)top.textContent=username?"Signed in as "+username:"Signed in";
+      const id=byId("my-trackit-id");
+      if(id)id.textContent=data?.trackit_id||"Unavailable";
+      const panel=byId("family-account-panel");
+      if(panel)panel.classList.remove("hidden");
+      // Keep the account-type tools synchronized whenever Account is opened.
+      const kid=byId("kid-customization"), parent=byId("parent-manage-button");
+      const parentTools=byId("account-type-parent-tools"), convert=byId("parent-convert-standard-kid-account");
+      if(data?.account_type==="kid"){
+        kid?.classList.remove("hidden"); parent?.classList.add("hidden");
+        parentTools?.classList.add("hidden"); convert?.classList.add("hidden");
+      }else if(data?.account_type==="parent"){
+        kid?.classList.add("hidden"); parent?.classList.remove("hidden");
+        parentTools?.classList.remove("hidden"); convert?.classList.remove("hidden");
+      }else{
+        kid?.classList.add("hidden"); parent?.classList.add("hidden");
+        parentTools?.classList.add("hidden"); convert?.classList.add("hidden");
+      }
+    }catch(e){
+      const id=byId("my-trackit-id");
+      if(id)id.textContent="Could not load";
+      console.warn("Account identity load failed",e);
+    }
+  }
+  async function logoutDirect(){
+    const t=token();
+    try{
+      if(window.TrackitSupabase&&t) await window.TrackitSupabase.rpc("logout_account",{p_token:t});
+    }catch(e){}
+    localStorage.removeItem("lt_token");
+    localStorage.removeItem("lt_user");
+    localStorage.removeItem("lt_settings");
+    closeAccount();
+    location.replace("login.html");
+  }
+  document.addEventListener("click",function(event){
+    const el=event.target.closest ? event.target.closest("#account-menu-close,#account-menu-settings,#account-menu-logout,.bottom-tab[data-tab='account'],.home-action[data-go-tab='account']") : null;
+    if(!el)return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    if(el.matches("#account-menu-close")){closeAccount();return;}
+    if(el.matches("#account-menu-settings")){openSettingsDirect();return;}
+    if(el.matches("#account-menu-logout")){logoutDirect();return;}
+    openAccount();
+  },true);
+  document.addEventListener("DOMContentLoaded",function(){
+    byId("account-menu-close")?.setAttribute("type","button");
+    byId("account-menu-settings")?.setAttribute("type","button");
+    byId("account-menu-logout")?.setAttribute("type","button");
+  });
+  window.trackitAccountFallback={openAccount,closeAccount,openSettingsDirect,loadIdentity,logoutDirect};
+})();
+</script>
 </body>
 </html>
