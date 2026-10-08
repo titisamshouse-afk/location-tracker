@@ -458,6 +458,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const SUPABASE_URL = "https://qiwfbgswukaixyhlzekw.supabase.co";
 const SUPABASE_KEY = "sb_publishable_bAIMCv0YQnAsWv_ppNzWhQ_uSRRFyTC";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+window.TrackitSupabase = supabase;
 
 const token = localStorage.getItem("lt_token");
 let username = localStorage.getItem("lt_user") || "";
@@ -1307,7 +1308,7 @@ function otaBindFriendTags(){const b=$( "friend-tag-create");if(b)b.onclick=()=>
 let familyAccountInfo=null;
 let parentKids=[];
 let selectedParentKid=null;
-async async function loadFamilyAccountInfo(){
+async function loadFamilyAccountInfo(){
   try{
     familyAccountInfo=await trackitApi.rpc("account_family_info",{p_token:token});
     const panel=$("family-account-panel"), id=$("my-trackit-id");
@@ -1671,7 +1672,9 @@ init();
       const msg=document.getElementById("delete-account-message");
       if(msg)msg.textContent="Deleting your account…";
       try{
-        const { data: deleteData, error: deleteError } = await supabase.rpc("delete_my_account",{p_token:token});
+        const client = window.TrackitSupabase;
+        if(!client) throw new Error("Trackit Supabase client is not initialized. Please reload Trackit.");
+        const { data: deleteData, error: deleteError } = await client.rpc("delete_my_account",{p_token:token});
         if(deleteError) throw deleteError;
         localStorage.removeItem("lt_token");
         localStorage.removeItem("lt_user");
