@@ -1,0 +1,12 @@
+{
+  "code": "zh",
+  "name": "中文",
+  "welcome": "欢迎使用 Trackit",
+  "location": "Location",
+  "chat": "Chat",
+  "sos": "SOS",
+  "account": "Account",
+  "settings": "Settings",
+  "logout": "Log out",
+  "language": "Language"
+}
