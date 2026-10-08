@@ -1,6 +1,6 @@
 {
-  "version": "4.1.7",
+  "version": "4.1.8",
   "name": "Trackit",
   "releaseType": "ota",
-  "notes": "Polished My customization settings layout for mobile and desktop."
+  "notes": "Fixed the large Home Location, Chat, SOS, and Account buttons."
 }
