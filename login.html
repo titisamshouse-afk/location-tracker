@@ -4,7 +4,7 @@
 <h1>Trackit</h1><p class="muted">Log in to your account.</p>
 <div class="auth-role-picker"><b>Account login</b><div class="role-buttons"><button type="button" id="standard-mode" class="secondary active">👤 Standard / Kid</button><button type="button" id="parent-mode" class="secondary">👨‍👩‍👧 Parent</button></div><div id="role-help" class="muted">Kid accounts can be linked to a parent account.</div></div>
 <form id="f"><div class="field"><label>Username</label><input id="u" autocomplete="username" required></div><div class="field"><label>Password</label><input id="p" type="password" autocomplete="current-password" required></div><button class="btn">Log in</button><div id="m"></div></form>
-<a class="link" href="create-account.html">Create an account</a>
+<a class="link" href="create-account.html">Create an account</a><a class="parent-create-button" href="create-account.html?type=parent">👨‍👩‍👧 Create Parent Account</a>
 </section></main>
 <script type="module">
 import{createClient}from"https://esm.sh/@supabase/supabase-js@2";
