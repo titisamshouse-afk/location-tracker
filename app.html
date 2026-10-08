@@ -19,7 +19,7 @@
   <header class="top">
     <div>
       <h1>Trackit</h1>
-      <div id="account" class="top-subtitle"></div><div id="trackit-version" class="top-subtitle">Trackit 4.1.5 • OTA</div>
+      <div id="account" class="top-subtitle"></div><div id="trackit-version" class="top-subtitle">Trackit 4.1.9 • OTA</div>
     </div>
     <div class="top-actions"><button id="settings-open" class="small" aria-label="Open settings">⚙️ Settings</button><button id="out" class="small">Log out</button></div>
   </header>
@@ -1605,5 +1605,51 @@ init();
 })();
 </script>
 <script src="ota-languages.js"></script>
+
+<script>
+(function(){
+  function showTrackitTab(tab){
+    const pages={home:"tab-home",location:"tab-location",chat:"tab-chat",sos:"tab-sos"};
+    Object.keys(pages).forEach(function(k){
+      const el=document.getElementById(pages[k]);
+      if(el) el.classList.toggle("hidden",k!==tab);
+    });
+    document.querySelectorAll("#trackit-bottom-nav .bottom-tab").forEach(function(b){
+      b.classList.toggle("active",b.getAttribute("data-tab")===tab);
+    });
+    if(tab==="location" && window.map && typeof window.map.invalidateSize==="function"){
+      setTimeout(function(){try{window.map.invalidateSize();}catch(e){}},100);
+    }
+    if(tab==="chat"){
+      const s=document.getElementById("app-chat-friend");
+      if(s && s.options.length<=1){
+        const f=document.getElementById("find-friend");
+        if(f) Array.from(f.options).slice(1).forEach(function(o){s.appendChild(o.cloneNode(true));});
+      }
+    }
+  }
+  function bind(){
+    const nav=document.getElementById("trackit-bottom-nav");
+    if(!nav || nav.dataset.robustBound==="1") return;
+    nav.dataset.robustBound="1";
+    nav.addEventListener("click",function(e){
+      const b=e.target.closest && e.target.closest(".bottom-tab");
+      if(!b || !nav.contains(b)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const tab=b.getAttribute("data-tab");
+      if(tab==="account"){
+        const menu=document.getElementById("account-menu-dialog");
+        if(menu) menu.classList.remove("hidden");
+        document.querySelectorAll("#trackit-bottom-nav .bottom-tab").forEach(function(x){
+          x.classList.toggle("active",x===b);
+        });
+      } else if(tab && showTrackitTab(tab), true) {}
+    },true);
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",bind); else bind();
+})();
+</script>
+
 </body>
 </html>
