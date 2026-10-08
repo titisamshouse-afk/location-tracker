@@ -409,6 +409,15 @@
       <button id="customization-save" class="setting-button">💾 Save my customization</button>
       <div id="customization-message" class="muted"></div>
     </div>
+    <div id="parent-convert-standard-kid" class="settings-section hidden">
+  <h3>🧒 Change Standard account to Kid</h3>
+  <div class="muted">Parents can change a Standard account to a Kid account by entering that account's exact username or display name. The account will also be linked to you as a Kid account.</div>
+  <form id="parent-convert-kid-form" class="inline-form">
+    <input id="parent-convert-kid-name" maxlength="80" placeholder="Username or display name" autocomplete="off" required>
+    <button class="setting-button" type="submit">Change to Kid</button>
+  </form>
+  <div id="parent-convert-kid-message" class="muted"></div>
+</div>
     <div class="settings-section" id="parent-convert-section" style="display:none">
       <h3>🔄 Account type</h3>
       <div class="muted">If you accidentally created a Parent account, you can convert it back to a Standard account. Your Parent→Kid links will be removed.</div>
@@ -1002,6 +1011,20 @@ function bindSettings() {
     try{await trackitApi.rpc("convert_parent_to_standard",{p_token:token,p_confirmation:phrase});msg.textContent="Converted to Standard. Reloading…";setTimeout(()=>location.reload(),600);}
     catch(e){msg.textContent=e.message;}
   };
+  $("parent-convert-kid-form")?.addEventListener("submit",async e=>{
+    e.preventDefault();
+    const input=$("parent-convert-kid-name"),msg=$("parent-convert-kid-message");
+    const value=input.value.trim();
+    if(!value){msg.textContent="Enter the account username or display name.";return;}
+    if(!confirm("Change the Standard account ""+value+"" to a Kid account and link it to you?"))return;
+    msg.textContent="Changing account type…";
+    try{
+      const r=await trackitApi.rpc("parent_convert_standard_to_kid",{p_token:token,p_username_or_name:value});
+      msg.textContent="Changed "+r.username+" to a Kid account and linked it to you.";
+      input.value="";
+      await loadParentKids();
+    }catch(err){msg.textContent=err.message;}
+  });
 
   $("settings-permissions").onclick = () => {
     if (!navigator.geolocation) return $("settings-message").textContent = "This device does not expose location services to the browser.";
@@ -1278,7 +1301,7 @@ async function loadFamilyAccountInfo(){
     if(id)id.textContent=familyAccountInfo.trackit_id||"Unavailable";
     const kidBox=$("kid-customization"), parentBtn=$("parent-manage-button");
     if(familyAccountInfo.account_type==="kid"){kidBox?.classList.remove("hidden");parentBtn?.classList.add("hidden");populateKidCustomization();}
-    else if(familyAccountInfo.account_type==="parent"){parentBtn?.classList.remove("hidden");kidBox?.classList.add("hidden");$("parent-convert-section").style.display="";}
+    else if(familyAccountInfo.account_type==="parent"){parentBtn?.classList.remove("hidden");kidBox?.classList.add("hidden");$("parent-convert-section").style.display="";$("parent-convert-standard-kid")?.classList.remove("hidden");}
     else {kidBox?.classList.add("hidden");parentBtn?.classList.add("hidden");$("parent-convert-section").style.display="none";}
     applyRemoteAccountSettings(familyAccountInfo);
     applyFamilyTheme(familyAccountInfo.theme);
