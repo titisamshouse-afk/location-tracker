@@ -1,5 +1,5 @@
 {
-  "version": "4.0.4",
-  "downloadUrl": "https://github.com/titisamshouse-afk/Location-tracker-naitive/releases/download/v4.0.4/app-debug.apk",
-  "notes": "Trackit 4.0.4: Settings reliability, fresh-install login reset, and native fixes."
+  "version": "4.0.5",
+  "downloadUrl": "https://github.com/titisamshouse-afk/Location-tracker-naitive/releases/download/v4.0.5/app-debug.apk",
+  "notes": "Trackit 4.0.5: removes automatic update popups on app launch and return; updates are checked manually in Settings."
 }
