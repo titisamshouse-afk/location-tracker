@@ -1,6 +1,6 @@
 {
-  "version": "4.0.4",
+  "version": "4.1.0",
   "name": "Trackit",
   "releaseType": "ota",
-  "notes": "Trackit OTA 4.0.4: Friends & Safety hub, chat, groups, places, meet-ups, safety timers, notifications, activity, device status, and privacy controls."
+  "notes": "Trackit OTA 4.1.0: OTA language system with English, Spanish, French, German, Italian, Portuguese, Japanese, Korean, Chinese, and Russian translation files."
 }
