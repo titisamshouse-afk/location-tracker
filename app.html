@@ -396,6 +396,8 @@
       <button id="settings-privacy" class="setting-button">🔒 Privacy information</button>
       <button id="settings-password" class="setting-button">🔑 Change password</button>
       <button id="settings-reset" class="setting-button danger-setting">↩ Reset app settings</button>
+      <button id="settings-delete-account" class="setting-button danger-setting">🗑️ Delete my account</button>
+      <div id="delete-account-message" class="muted"></div>
     </div>
 
 
@@ -1648,6 +1650,44 @@ init();
     },true);
   }
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",bind); else bind();
+})();
+</script>
+
+<script>
+(function(){
+  function bindDeleteAccount(){
+    const b=document.getElementById("settings-delete-account");
+    if(!b || b.dataset.bound==="1") return;
+    b.dataset.bound="1";
+    b.addEventListener("click",async function(){
+      const token=localStorage.getItem("lt_token")||"";
+      if(!token){ alert("Please log in again."); return; }
+      const first=confirm("Delete your Trackit account? This permanently deletes your account data, locations, messages, notifications, groups, meetups, places, settings, and family links. This cannot be undone.");
+      if(!first)return;
+      const second=prompt("Type DELETE to permanently delete your account.");
+      if(second!=="DELETE"){ alert("Account deletion cancelled."); return; }
+      b.disabled=true;
+      b.textContent="Deleting…";
+      const msg=document.getElementById("delete-account-message");
+      if(msg)msg.textContent="Deleting your account…";
+      try{
+        await trackitApi.rpc("delete_my_account",{p_token:token});
+        localStorage.removeItem("lt_token");
+        localStorage.removeItem("lt_user");
+        localStorage.removeItem("lt_username");
+        localStorage.removeItem("lt_account_type");
+        localStorage.removeItem("lt_family_info");
+        alert("Your Trackit account has been permanently deleted.");
+        location.href="login.html";
+      }catch(e){
+        b.disabled=false;
+        b.textContent="🗑️ Delete my account";
+        if(msg)msg.textContent="Could not delete the account: "+(e?.message||e);
+      }
+    });
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bindDeleteAccount);else bindDeleteAccount();
+  setTimeout(bindDeleteAccount,1000);
 })();
 </script>
 
