@@ -316,3 +316,12 @@ html[data-theme="dark"] #customization-save{
     padding:9px;
   }
 }
+
+/* Trackit family group */
+.family-members-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.family-member-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid rgba(127,127,127,.22);border-radius:12px;background:rgba(127,127,127,.06)}
+.family-member-icon{font-size:22px;line-height:1}
+.family-member-info{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
+.family-member-info b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.family-member-info small{color:var(--muted,#6b7280);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.family-member-role{font-weight:700;font-size:.85rem;padding:5px 9px;border-radius:999px;background:rgba(59,130,246,.12)}
