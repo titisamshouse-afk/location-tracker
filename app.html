@@ -1437,18 +1437,90 @@ function setupAppNavigation() {
   $("account-menu-dialog")?.addEventListener("click",e=>{if(e.target===$("account-menu-dialog"))closeAccountMenu();});
   $("account-menu-settings")?.addEventListener("click",()=>{closeAccountMenu();openSettings();});
   $("account-menu-logout")?.addEventListener("click",()=>$("out")?.click());
-  otaBindFriendTags();bindFamilyTools();bindFullscreenButton();loadFamilyAccountInfo();
+  // Keep navigation/chat bindings isolated: an optional feature must never prevent Chat from binding.
+  try{otaBindFriendTags();}catch(e){console.warn("Friend tags binding failed",e);}
+  try{bindFamilyTools();}catch(e){console.warn("Family tools binding failed",e);}
+  try{bindFullscreenButton();}catch(e){console.warn("Fullscreen binding failed",e);}
+  try{loadFamilyAccountInfo();}catch(e){console.warn("Family account load failed",e);}
 
   async function loadAppChatFriends(){
-    const select=$("app-chat-friend");if(!select)return;const old=select.value;select.innerHTML='<option value="">Choose a friend…</option>';
-    const source=$("find-friend");if(source)[...source.options].slice(1).forEach(o=>select.appendChild(o.cloneNode(true)));
-    if([...select.options].some(o=>o.value===old))select.value=old;updateChatFavoriteButton();
+    const select=$("app-chat-friend");if(!select)return;
+    const old=select.value;
+    select.innerHTML='<option value="">Choose a friend…</option>';
+    const source=$("find-friend");
+    if(source)[...source.options].slice(1).forEach(o=>select.appendChild(o.cloneNode(true)));
+    if([...select.options].some(o=>o.value===old))select.value=old;
+    updateChatFavoriteButton();
   }
+
   let appChatConversationId=null;
-  $("app-chat-open").onclick=async()=>{const friendId=$("app-chat-friend").value;if(!friendId){$("app-chat-status").textContent="Choose a friend first.";return;}try{const data=await trackitApi.rpc("trackit_get_direct_conversation",{p_token:token,p_friend_id:friendId});appChatConversationId=data.conversation_id;$("app-chat-title").textContent="Chat with "+($("app-chat-friend").selectedOptions[0]?.textContent||"Friend");$("app-chat-form").classList.remove("hidden");await loadAppMessages();}catch(e){$("app-chat-status").textContent=e.message;}};
-  async function loadAppMessages(){if(!appChatConversationId)return;try{const rows=(await trackitApi.rpc("trackit_list_messages",{p_token:token,p_conversation_id:appChatConversationId,p_limit:100})||[]).reverse();const box=$("app-chat-messages");box.innerHTML="";if(!rows.length){box.innerHTML='<div class="empty">No messages yet. Say hello!</div>';return;}rows.forEach(m=>{const row=document.createElement("div");row.className="message "+(m.sender_username===username?"mine":"");row.innerHTML="<b>"+escapeHtml(m.sender_username)+"</b><span>"+escapeHtml(m.body)+"</span><small>"+new Date(m.created_at).toLocaleString()+"</small>";box.appendChild(row);});box.scrollTop=box.scrollHeight;}catch(e){$("app-chat-status").textContent=e.message;}}
-  $("app-chat-form").onsubmit=async e=>{e.preventDefault();const body=$("app-chat-input").value.trim();if(!body||!appChatConversationId)return;try{await trackitApi.rpc("trackit_send_message",{p_token:token,p_conversation_id:appChatConversationId,p_body:body});$("app-chat-input").value="";await loadAppMessages();}catch(err){$("app-chat-status").textContent=err.message;}};
-  renderFavoriteChats();switchTab("home");
+
+  async function openAppChat(){
+    const select=$("app-chat-friend"), status=$("app-chat-status");
+    if(!select)return;
+    const friendId=select.value;
+    if(!friendId){if(status)status.textContent="Choose a friend first.";return;}
+    if(status)status.textContent="Opening chat…";
+    try{
+      const data=await trackitApi.rpc("trackit_get_direct_conversation",{p_token:token,p_friend_id:friendId});
+      appChatConversationId=data?.conversation_id||null;
+      if(!appChatConversationId)throw new Error("Could not open this conversation.");
+      const title=$("app-chat-title"), form=$("app-chat-form");
+      if(title)title.textContent="Chat with "+(select.selectedOptions[0]?.textContent||"Friend");
+      if(form)form.classList.remove("hidden");
+      if(status)status.textContent="";
+      await loadAppMessages();
+    }catch(e){if(status)status.textContent="Could not open chat: "+(e?.message||e);}
+  }
+
+  async function loadAppMessages(){
+    const box=$("app-chat-messages"),status=$("app-chat-status");
+    if(!box||!appChatConversationId)return;
+    if(status)status.textContent="Loading messages…";
+    try{
+      const rows=(await trackitApi.rpc("trackit_list_messages",{p_token:token,p_conversation_id:appChatConversationId,p_limit:100})||[]).reverse();
+      box.innerHTML="";
+      if(!rows.length){box.innerHTML='<div class="empty">No messages yet. Say hello!</div>';}
+      else rows.forEach(m=>{
+        const row=document.createElement("div");
+        row.className="message "+(m.sender_username===username?"mine":"");
+        row.innerHTML="<b>"+escapeHtml(m.sender_username)+"</b><span>"+escapeHtml(m.body)+"</span><small>"+new Date(m.created_at).toLocaleString()+"</small>";
+        box.appendChild(row);
+      });
+      box.scrollTop=box.scrollHeight;
+      if(status)status.textContent="";
+    }catch(e){
+      if(status)status.textContent="Could not load messages: "+(e?.message||e);
+      box.innerHTML='<div class="error">Could not load messages.</div>';
+    }
+  }
+
+  const chatOpen=$("app-chat-open");
+  if(chatOpen)chatOpen.addEventListener("click",openAppChat);
+
+  const chatSelect=$("app-chat-friend");
+  if(chatSelect)chatSelect.addEventListener("change",()=>updateChatFavoriteButton());
+
+  const chatForm=$("app-chat-form");
+  if(chatForm)chatForm.addEventListener("submit",async e=>{
+    e.preventDefault();
+    const input=$("app-chat-input"),status=$("app-chat-status");
+    const body=input?.value.trim();
+    if(!body||!appChatConversationId)return;
+    if(status)status.textContent="Sending…";
+    try{
+      await trackitApi.rpc("trackit_send_message",{p_token:token,p_conversation_id:appChatConversationId,p_body:body});
+      if(input)input.value="";
+      await loadAppMessages();
+    }catch(err){if(status)status.textContent="Could not send message: "+(err?.message||err);}
+  });
+
+  // The large Home → Chat button gets its own direct binding as well as tab delegation.
+  const homeChat=document.querySelector('.home-action[data-go-tab="chat"]');
+  if(homeChat)homeChat.addEventListener("click",e=>{e.preventDefault();switchTab("chat");});
+
+  renderFavoriteChats();
+  switchTab("home");
 }
 
 async function init(){
