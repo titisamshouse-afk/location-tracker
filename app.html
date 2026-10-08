@@ -1644,7 +1644,7 @@ init();
         document.querySelectorAll("#trackit-bottom-nav .bottom-tab").forEach(function(x){
           x.classList.toggle("active",x===b);
         });
-      } else if(tab && showTrackitTab(tab), true) {}
+      } else if(tab) { showTrackitTab(tab); }
     },true);
   }
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",bind); else bind();
