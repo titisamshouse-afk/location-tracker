@@ -312,11 +312,21 @@
     <div class="settings-section"><h3>Select a Kid</h3><select id="parent-kid-select"><option value="">Choose a linked Kid…</option></select></div>
     <div id="parent-kid-controls" class="hidden">
       <div class="family-selected-kid"><b id="parent-selected-kid-name"></b><span id="parent-selected-kid-id" class="hub-badge"></span></div>
-      <div class="field"><label for="parent-kid-display">Display name</label><input id="parent-kid-display" maxlength="50"></div>
+      <div class="field"><label for="parent-kid-display">Display name</label><input id="parent-kid-display" maxlength="50"></div>      <div class="settings-section"><h3>⚙️ All Kid settings</h3>
       <label class="setting-row"><span><b>Theme</b><small>Set the Kid account theme.</small></span><select id="parent-kid-theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+      <label class="setting-row"><span><b>Compact layout</b></span><input id="parent-kid-compact" type="checkbox"></label>
+      <label class="setting-row"><span><b>Auto-refresh friends</b></span><input id="parent-kid-refresh" type="checkbox"></label>
+      <label class="setting-row"><span><b>Remember map position</b></span><input id="parent-kid-remember-map" type="checkbox"></label>
+      <label class="setting-row"><span><b>Confirm before removing friends</b></span><input id="parent-kid-confirm-remove" type="checkbox"></label>
       <label class="setting-row"><span><b>Show last-known locations</b></span><input id="parent-kid-last-known" type="checkbox"></label>
+      <label class="setting-row"><span><b>Confirm SOS</b></span><input id="parent-kid-confirm-sos" type="checkbox"></label>
+      <label class="setting-row"><span><b>SOS sound</b></span><input id="parent-kid-sos-sound" type="checkbox"></label>
+      <label class="setting-row"><span><b>Vibration</b></span><input id="parent-kid-vibrate" type="checkbox"></label>
       <label class="setting-row"><span><b>Allow location sharing</b></span><input id="parent-kid-sharing" type="checkbox"></label>
       <label class="setting-row"><span><b>Allow SOS</b></span><input id="parent-kid-sos" type="checkbox"></label>
+      <div id="parent-kid-customization-form" class="customization-grid"></div>
+      </div>
+      
       <button id="parent-kid-save" class="setting-button">Save Kid settings</button><div id="parent-kid-message" class="muted"></div>
     </div>
   </div>
@@ -385,6 +395,19 @@
       <div id="friend-tag-filter" class="tag-filter"></div>
       <div id="friend-tag-list" class="friend-tag-list"></div>
       <button id="friend-tag-create" class="setting-button">＋ Create custom tag</button>
+    </div>
+    <div class="settings-section">
+      <h3>🎨 My customization</h3>
+      <div class="muted">These profile and favorite settings work for Standard, Kid, and Parent accounts. Parents can also set the same choices for each linked Kid.</div>
+      <div id="customization-form" class="customization-grid"></div>
+      <button id="customization-save" class="setting-button">💾 Save my customization</button>
+      <div id="customization-message" class="muted"></div>
+    </div>
+    <div class="settings-section" id="parent-convert-section" style="display:none">
+      <h3>🔄 Account type</h3>
+      <div class="muted">If you accidentally created a Parent account, you can convert it back to a Standard account. Your Parent→Kid links will be removed.</div>
+      <button id="convert-parent-button" class="setting-button danger-setting">Convert Parent to Standard</button>
+      <div id="convert-parent-message" class="muted"></div>
     </div>
     <div id="settings-message" class="muted"></div>
   </div>
@@ -825,10 +848,23 @@ const DEFAULT_SETTINGS = {
   rememberMap: true, confirmRemove: true, lastKnown: true,
   confirmSos: true, sosSound: true, vibrate: true
 };
+const CUSTOMIZATION_FIELDS=[
+  ["nickname","Nickname","text"],["favorite_color","Favorite color","color"],["favorite_food","Favorite food","text"],
+  ["favorite_snack","Favorite snack","text"],["favorite_drink","Favorite drink","text"],["favorite_animal","Favorite animal","text"],
+  ["favorite_game","Favorite game","text"],["favorite_movie","Favorite movie/show","text"],["favorite_song","Favorite song","text"],
+  ["favorite_sport","Favorite sport","text"],["favorite_team","Favorite team","text"],["favorite_subject","Favorite subject","text"],
+  ["favorite_book","Favorite book","text"],["favorite_hobby","Favorite hobby","text"],["favorite_place","Favorite place","text"],
+  ["favorite_season","Favorite season","select","Spring|Summer|Fall|Winter"],["favorite_holiday","Favorite holiday","text"],
+  ["favorite_character","Favorite character","text"],["favorite_emoji","Favorite emoji","text"],["dream_destination","Dream destination","text"],
+  ["profile_status","Profile status","text"],["bio","About me","textarea"]
+];
+let accountCustomization={};
 let settings = {...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem("lt_settings") || "{}")};
 
 function saveSettings() {
   localStorage.setItem("lt_settings", JSON.stringify(settings));
+  clearTimeout(window.__trackitPrefSync);
+  window.__trackitPrefSync=setTimeout(syncMyPreferences,500);
 }
 
 function applyTheme() {
@@ -908,6 +944,35 @@ async function sendSOS() {
   );
 }
 
+function renderCustomizationForm(targetId,values={}){
+  const box=$(targetId); if(!box)return;
+  box.innerHTML=CUSTOMIZATION_FIELDS.map(([id,label,type,opts])=>{
+    if(type==="textarea")return '<label class="custom-field"><span>'+escapeHtml(label)+'</span><textarea id="'+targetId+'-'+id+'" maxlength="180" placeholder="'+escapeHtml(label)+'"></textarea></label>';
+    if(type==="select")return '<label class="custom-field"><span>'+escapeHtml(label)+'</span><select id="'+targetId+'-'+id+'"><option value="">Choose…</option>'+opts.split("|").map(x=>'<option>'+escapeHtml(x)+'</option>').join("")+'</select></label>';
+    const extra=type==="color"?' value="#4da3ff"': ' maxlength="80" placeholder="'+escapeHtml(label)+'"';
+    return '<label class="custom-field"><span>'+escapeHtml(label)+'</span><input id="'+targetId+'-'+id+'" type="'+type+'"'+extra+'></label>';
+  }).join("");
+  CUSTOMIZATION_FIELDS.forEach(([id])=>{const el=$(targetId+"-"+id);if(el)el.value=values[id]??"";});
+}
+function readCustomizationForm(targetId){
+  const out={}; CUSTOMIZATION_FIELDS.forEach(([id])=>{const el=$(targetId+"-"+id);if(el)out[id]=(el?.value||"").trim();}); return out;
+}
+function syncMyPreferences(){
+  if(!token)return;
+  trackitApi.rpc("update_my_preferences",{p_token:token,p_app_settings:settings,p_customization:accountCustomization}).catch(()=>{});
+}
+async function saveMyCustomization(){
+  accountCustomization=readCustomizationForm("customization-form");
+  const msg=$("customization-message");if(msg)msg.textContent="Saving…";
+  try{const data=await trackitApi.rpc("update_my_preferences",{p_token:token,p_app_settings:settings,p_customization:accountCustomization});accountCustomization=data.customization||accountCustomization;if(msg)msg.textContent="Customization saved.";}
+  catch(e){if(msg)msg.textContent=e.message;}
+}
+function applyRemoteAccountSettings(info){
+  if(!info)return;
+  if(info.app_settings&&typeof info.app_settings==="object"){settings={...DEFAULT_SETTINGS,...info.app_settings};saveSettings();applySettingsToUI();}
+  accountCustomization=info.customization||{};
+  renderCustomizationForm("customization-form",accountCustomization);
+}
 function bindSettings() {
   $("settings-open").onclick = openSettings;
   $("settings-close").onclick = closeSettings;
@@ -923,6 +988,15 @@ function bindSettings() {
   $("setting-confirm-sos").onchange = e => { settings.confirmSos = e.target.checked; saveSettings(); };
   $("setting-sos-sound").onchange = e => { settings.sosSound = e.target.checked; saveSettings(); };
   $("setting-vibrate").onchange = e => { settings.vibrate = e.target.checked; saveSettings(); };
+  $("customization-save").onclick=saveMyCustomization;
+  $("convert-parent-button").onclick=async()=>{
+    if(!confirm("Are you sure you want to convert this Parent account into a Standard account?"))return;
+    const phrase=prompt('Type CONVERT TO STANDARD to confirm. This removes all Parent→Kid links.');
+    if(phrase===null)return;
+    const msg=$("convert-parent-message");msg.textContent="Converting…";
+    try{await trackitApi.rpc("convert_parent_to_standard",{p_token:token,p_confirmation:phrase});msg.textContent="Converted to Standard. Reloading…";setTimeout(()=>location.reload(),600);}
+    catch(e){msg.textContent=e.message;}
+  };
 
   $("settings-permissions").onclick = () => {
     if (!navigator.geolocation) return $("settings-message").textContent = "This device does not expose location services to the browser.";
@@ -942,6 +1016,8 @@ function bindSettings() {
   };
   $("sos-send").onclick = sendSOS;
   applySettingsToUI();
+  renderCustomizationForm("customization-form",accountCustomization);
+  $("parent-convert-section").style.display=(familyAccountInfo?.account_type==="parent")?"":"none";
 }
 
 
@@ -1198,9 +1274,10 @@ async function loadFamilyAccountInfo(){
     if(id)id.textContent=familyAccountInfo.trackit_id||"Unavailable";
     const kidBox=$("kid-customization"), parentBtn=$("parent-manage-button");
     if(familyAccountInfo.account_type==="kid"){kidBox?.classList.remove("hidden");parentBtn?.classList.add("hidden");populateKidCustomization();}
-    else if(familyAccountInfo.account_type==="parent"){parentBtn?.classList.remove("hidden");kidBox?.classList.add("hidden");}
+    else if(familyAccountInfo.account_type==="parent"){parentBtn?.classList.remove("hidden");kidBox?.classList.add("hidden");$("parent-convert-section").style.display="";}
+    else {$("parent-convert-section").style.display="none";}
     else {kidBox?.classList.add("hidden");parentBtn?.classList.add("hidden");}
-    applyFamilyTheme(familyAccountInfo.theme);
+    applyRemoteAccountSettings(familyAccountInfo);\n    applyFamilyTheme(familyAccountInfo.theme);
   }catch(e){console.warn("Family tools unavailable",e);}
 }
 function applyFamilyTheme(theme){if(theme==="dark"||theme==="light")document.documentElement.dataset.theme=theme;else delete document.documentElement.dataset.theme;}
@@ -1215,14 +1292,14 @@ function populateKidCustomization(){
 async function saveKidCustomization(){
   const msg=$("kid-self-message");if(msg)msg.textContent="Saving…";
   try{
-    familyAccountInfo=await trackitApi.rpc("update_my_preferences",{p_token:token,p_display_name:$("kid-self-name").value,p_theme:$("kid-self-theme").value,p_show_last_known:$("kid-self-last-known").checked,p_location_sharing_enabled:$("kid-self-sharing").checked,p_sos_enabled:$("kid-self-sos").checked});
+    familyAccountInfo=await trackitApi.rpc("update_my_preferences",{p_token:token,p_display_name:$("kid-self-name").value,p_theme:$("kid-self-theme").value,p_show_last_known:$("kid-self-last-known").checked,p_location_sharing_enabled:$("kid-self-sharing").checked,p_sos_enabled:$("kid-self-sos").checked,p_app_settings:settings,p_customization:accountCustomization});
     applyFamilyTheme(familyAccountInfo.theme);$("account-tab-name").textContent=familyAccountInfo.display_name||username;
     if(msg)msg.textContent="Saved.";
   }catch(e){if(msg)msg.textContent=e.message;}
 }
 async function loadParentKids(){
   const select=$("parent-kid-select");if(!select)return;
-  try{parentKids=await trackitApi.rpc("parent_list_kids",{p_token:token})||[];}catch(e){parentKids=[];$("parent-link-message").textContent=e.message;}
+  try{parentKids=await trackitApi.rpc("parent_list_kids",{p_token:token})||[];parentKids.forEach(k=>{if(k.app_settings===undefined)k.app_settings={};if(k.customization===undefined)k.customization={};});}catch(e){parentKids=[];$("parent-link-message").textContent=e.message;}
   select.innerHTML='<option value="">Choose a linked Kid…</option>';
   parentKids.forEach(k=>{const o=document.createElement("option");o.value=k.trackit_id;o.textContent=(k.display_name||k.username)+" • "+k.trackit_id;select.appendChild(o);});
   selectedParentKid=null;$("parent-kid-controls")?.classList.add("hidden");
@@ -1231,13 +1308,15 @@ function showSelectedParentKid(){
   const id=$("parent-kid-select").value;selectedParentKid=parentKids.find(k=>k.trackit_id===id)||null;
   const box=$("parent-kid-controls");if(!selectedParentKid){box?.classList.add("hidden");return;}
   box?.classList.remove("hidden");$("parent-selected-kid-name").textContent=selectedParentKid.display_name||selectedParentKid.username;$("parent-selected-kid-id").textContent=selectedParentKid.trackit_id;
-  $("parent-kid-display").value=selectedParentKid.display_name||selectedParentKid.username;$("parent-kid-theme").value=selectedParentKid.theme||"system";$("parent-kid-last-known").checked=!!selectedParentKid.show_last_known;$("parent-kid-sharing").checked=!!selectedParentKid.location_sharing_enabled;$("parent-kid-sos").checked=!!selectedParentKid.sos_enabled;
+  $("parent-kid-display").value=selectedParentKid.display_name||selectedParentKid.username;$("parent-kid-theme").value=selectedParentKid.theme||"system";$("parent-kid-last-known").checked=!!selectedParentKid.show_last_known;$("parent-kid-sharing").checked=!!selectedParentKid.location_sharing_enabled;$("parent-kid-sos").checked=!!selectedParentKid.sos_enabled;$("parent-kid-compact").checked=!!selectedParentKid.app_settings?.compact;$("parent-kid-refresh").checked=selectedParentKid.app_settings?.refresh!==false;$("parent-kid-remember-map").checked=selectedParentKid.app_settings?.rememberMap!==false;$("parent-kid-confirm-remove").checked=selectedParentKid.app_settings?.confirmRemove!==false;$("parent-kid-confirm-sos").checked=selectedParentKid.app_settings?.confirmSos!==false;$("parent-kid-sos-sound").checked=selectedParentKid.app_settings?.sosSound!==false;$("parent-kid-vibrate").checked=selectedParentKid.app_settings?.vibrate!==false;renderCustomizationForm("parent-kid-customization-form",selectedParentKid.customization||{});
 }
 async function saveSelectedParentKid(){
   if(!selectedParentKid)return;
   const msg=$("parent-kid-message");msg.textContent="Saving…";
   try{
-    await trackitApi.rpc("parent_update_kid",{p_token:token,p_kid_trackit_id:selectedParentKid.trackit_id,p_display_name:$("parent-kid-display").value,p_theme:$("parent-kid-theme").value,p_show_last_known:$("parent-kid-last-known").checked,p_location_sharing_enabled:$("parent-kid-sharing").checked,p_sos_enabled:$("parent-kid-sos").checked});
+    const kidSettings={...DEFAULT_SETTINGS,...(selectedParentKid.app_settings||{}),theme:$("parent-kid-theme").value,compact:$("parent-kid-compact").checked,refresh:$("parent-kid-refresh").checked,rememberMap:$("parent-kid-remember-map").checked,confirmRemove:$("parent-kid-confirm-remove").checked,confirmSos:$("parent-kid-confirm-sos").checked,sosSound:$("parent-kid-sos-sound").checked,vibrate:$("parent-kid-vibrate").checked}; kidSettings.lastKnown=$("parent-kid-last-known").checked;
+    const kidCustomization=readCustomizationForm("parent-kid-customization-form");
+    await trackitApi.rpc("parent_update_kid",{p_token:token,p_kid_trackit_id:selectedParentKid.trackit_id,p_display_name:$("parent-kid-display").value,p_theme:$("parent-kid-theme").value,p_show_last_known:$("parent-kid-last-known").checked,p_location_sharing_enabled:$("parent-kid-sharing").checked,p_sos_enabled:$("parent-kid-sos").checked,p_app_settings:kidSettings,p_customization:kidCustomization});
     const savedId=selectedParentKid.trackit_id;await loadParentKids();$("parent-kid-select").value=savedId;showSelectedParentKid();msg.textContent="Kid settings saved.";
   }catch(e){msg.textContent=e.message;}
 }
