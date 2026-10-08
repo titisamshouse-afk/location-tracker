@@ -92,6 +92,8 @@
     </section>
   </div>
 
+  <button id="fullscreen-toggle" class="fullscreen-toggle secondary" type="button" title="Hide Android navigation buttons">⛶ Full screen</button>
+
   <nav id="trackit-bottom-nav" class="bottom-nav" aria-label="Trackit navigation">
     <button class="bottom-tab active" data-tab="home"><span>⌂</span><b>Home</b></button>
     <button class="bottom-tab" data-tab="chat"><span>💬</span><b>Chat</b></button>
@@ -1250,6 +1252,24 @@ function bindFamilyTools(){
   $("parent-link-form")?.addEventListener("submit",async e=>{e.preventDefault();const msg=$("parent-link-message");msg.textContent="Linking…";try{const r=await trackitApi.rpc("parent_link_kid",{p_token:token,p_kid_trackit_id:$("parent-kid-id-input").value});$("parent-kid-id-input").value="";msg.textContent="Linked "+r.kid_username+" ("+r.kid_id+").";await loadParentKids();}catch(err){msg.textContent=err.message;}});
 }
 
+function bindFullscreenButton(){
+  const b=$("fullscreen-toggle"); if(!b)return;
+  const update=()=>{const on=document.body.classList.contains("trackit-fullscreen");b.textContent=on?"⛶ Exit full screen":"⛶ Full screen";};
+  b.onclick=()=>{
+    const native=window.LocationTrackerNative;
+    if(native&&typeof native.setFullscreen==="function"){
+      const on=!document.body.classList.contains("trackit-fullscreen");
+      native.setFullscreen(on);
+      document.body.classList.toggle("trackit-fullscreen",on);
+      update();
+      return;
+    }
+    if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
+    document.body.classList.add("trackit-fullscreen"); update();
+  };
+  update();
+}
+
 function setupAppNavigation() {
   const pages = {
     home: $("tab-home"),
@@ -1292,6 +1312,7 @@ function setupAppNavigation() {
   $("account-settings-button").onclick = openSettings;
   otaBindFriendTags();
   bindFamilyTools();
+  bindFullscreenButton();
   loadFamilyAccountInfo();
   $("account-logout-button").onclick = () => $("out").click();
 
