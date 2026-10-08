@@ -1,6 +1,6 @@
 {
-  "version": "4.1.6",
+  "version": "4.1.7",
   "name": "Trackit",
   "releaseType": "ota",
-  "notes": "Trackit 4.1.5: fixed Chat/Messages navigation and message handlers so the Home Chat button, friend selection, opening conversations, loading messages, and sending messages work reliably."
+  "notes": "Polished My customization settings layout for mobile and desktop."
 }
