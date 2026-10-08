@@ -205,3 +205,5 @@ html[data-theme="dark"] .ota-safety-family{background:#172033;border-color:#3741
 .fullscreen-toggle{position:fixed;right:12px;bottom:92px;z-index:1000;font-weight:800}.trackit-fullscreen .fullscreen-toggle{bottom:20px}@media(max-width:600px){.fullscreen-toggle{right:8px;bottom:88px}}
 
 .parent-create-button{display:block;margin-top:12px;text-align:center;padding:12px 16px;border-radius:12px;text-decoration:none;font-weight:800;border:1px solid currentColor}
+
+.customization-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}.custom-field{display:flex;flex-direction:column;gap:6px;font-weight:700}.custom-field span{font-size:.9rem}.custom-field input,.custom-field textarea,.custom-field select{width:100%;box-sizing:border-box}.custom-field textarea{min-height:72px;resize:vertical}.custom-field input[type=color]{height:48px;padding:4px}.customization-grid .custom-field:last-child{grid-column:1/-1}@media(max-width:600px){.customization-grid{grid-template-columns:1fr}.customization-grid .custom-field:last-child{grid-column:auto}}
