@@ -4,6 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#111827">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Trackit">
   <title>Trackit</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -397,8 +402,7 @@
       <div id="friend-tag-list" class="friend-tag-list"></div>
       <button id="friend-tag-create" class="setting-button">＋ Create custom tag</button>
     </div>
-    <div class="settings-section">
-      <h3>🎨 My customization</h3>
+    <div class="settings-section">      <h3>🎨 My customization</h3>
       <div class="muted">These profile and favorite settings work for Standard, Kid, and Parent accounts. Parents can also set the same choices for each linked Kid.</div>
       <div id="customization-form" class="customization-grid"></div>
       <button id="customization-save" class="setting-button">💾 Save my customization</button>
@@ -797,8 +801,7 @@ $("add-friend").onclick = () => {
 };
 
 function closeDialog() {
-  $("friend-dialog").classList.add("hidden");
-}
+  $("friend-dialog").classList.add("hidden");}
 
 $("close-dialog").onclick = closeDialog;
 $("friend-dialog").onclick = e => {
@@ -1197,8 +1200,7 @@ function otaBind(){
   document.querySelectorAll("[data-ota-feature]").forEach(b=>b.onclick=()=>{otaOpen();otaShowSection(b.dataset.otaFeature);});
   $("ota-friend-search").oninput=e=>otaRenderSearch(e.target.value);
   $("ota-safe-home").onclick=()=>otaSafetyStatus("I'm home");$("ota-safe-school").onclick=()=>otaSafetyStatus("I'm at school");$("ota-safe-way").onclick=()=>otaSafetyStatus("I'm on my way");
-  $("ota-safe-timer").onclick=async()=>{const mins=Number(prompt("How many minutes should the safety timer run?","30"));if(!Number.isFinite(mins)||mins<=0)return;try{await trackitApi.rpc("trackit_create_safety_timer",{p_token:token,p_label:"Check in",p_expires_at:new Date(Date.now()+mins*60000).toISOString()});otaRenderSafety();}catch(e){$( "ota-safety-message").textContent=e.message;}};
-  $("ota-place-form").onsubmit=async e=>{e.preventDefault();try{const p=await currentCoords();await trackitApi.rpc("trackit_create_place",{p_token:token,p_name:$( "ota-place-name").value.trim(),p_latitude:p.coords.latitude,p_longitude:p.coords.longitude,p_kind:$( "ota-place-kind").value});$( "ota-place-name").value="";otaRenderPlaces();}catch(err){alert(err.message);}};
+  $("ota-safe-timer").onclick=async()=>{const mins=Number(prompt("How many minutes should the safety timer run?","30"));if(!Number.isFinite(mins)||mins<=0)return;try{await trackitApi.rpc("trackit_create_safety_timer",{p_token:token,p_label:"Check in",p_expires_at:new Date(Date.now()+mins*60000).toISOString()});otaRenderSafety();}catch(e){$( "ota-safety-message").textContent=e.message;}};  $("ota-place-form").onsubmit=async e=>{e.preventDefault();try{const p=await currentCoords();await trackitApi.rpc("trackit_create_place",{p_token:token,p_name:$( "ota-place-name").value.trim(),p_latitude:p.coords.latitude,p_longitude:p.coords.longitude,p_kind:$( "ota-place-kind").value});$( "ota-place-name").value="";otaRenderPlaces();}catch(err){alert(err.message);}};
   $("ota-meetup-form").onsubmit=async e=>{e.preventDefault();try{const p=await currentCoords();const t=$( "ota-meetup-time").value?new Date($( "ota-meetup-time").value).toISOString():null;const ids=otaFriends().map(x=>x.id);await trackitApi.rpc("trackit_create_meetup",{p_token:token,p_title:$( "ota-meetup-title").value.trim(),p_latitude:p.coords.latitude,p_longitude:p.coords.longitude,p_starts_at:t,p_friend_ids:ids});$( "ota-meetup-title").value="";otaRenderMeetups();}catch(err){alert(err.message);}};
   $("ota-group-form").onsubmit=async e=>{e.preventDefault();try{const ids=otaFriends().map(x=>x.id);await trackitApi.rpc("trackit_create_group",{p_token:token,p_name:$( "ota-group-name").value.trim(),p_friend_ids:ids});$( "ota-group-name").value="";otaRenderGroups();}catch(err){alert(err.message);}};
   $("ota-device-refresh").onclick=otaRenderDevice;
@@ -1509,6 +1511,23 @@ init();
     if (open) openSettingsFallback();
     if (close) closeSettingsFallback();
   }, true);
+})();
+</script>
+
+<script>
+(function(){
+  if(window.matchMedia && /iPhone|iPad|iPod/i.test(navigator.userAgent)){
+    const standalone=window.navigator.standalone===true || (window.matchMedia('(display-mode: standalone)').matches);
+    if(!standalone && !localStorage.getItem('trackit_ios_install_help_v1')){
+      const box=document.createElement('div');
+      box.id='trackit-ios-install-help';
+      box.innerHTML='<div style="position:fixed;left:12px;right:12px;bottom:92px;z-index:2000;padding:16px;border-radius:18px;background:rgba(17,24,39,.97);color:#fff;box-shadow:0 10px 35px rgba(0,0,0,.3);font-size:14px;line-height:1.4"><b style="font-size:16px">📲 Add Trackit to your Home Screen</b><div style="margin-top:6px">In Safari, tap <b>Share</b> → <b>Add to Home Screen</b> → <b>Add</b>. Trackit will open like an app with its own Home Screen icon.</div><div style="display:flex;gap:8px;margin-top:10px"><button id="trackit-ios-help-close" style="flex:1;padding:10px;border-radius:12px;border:0;font-weight:700">Not now</button><button id="trackit-ios-help-done" style="flex:1;padding:10px;border-radius:12px;border:0;font-weight:700">Got it</button></div></div>';
+      document.body.appendChild(box);
+      const close=()=>{localStorage.setItem('trackit_ios_install_help_v1','1');box.remove();};
+      document.getElementById('trackit-ios-help-close').onclick=close;
+      document.getElementById('trackit-ios-help-done').onclick=close;
+    }
+  }
 })();
 </script>
 </body>
