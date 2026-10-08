@@ -1,6 +1,6 @@
 {
-  "version": "4.1.4",
+  "version": "4.1.5",
   "name": "Trackit",
   "releaseType": "ota",
-  "notes": "Trackit OTA 4.1.0: OTA language system with English, Spanish, French, German, Italian, Portuguese, Japanese, Korean, Chinese, and Russian translation files. Added Parent-to-Kid conversion by exact username/display name. Fixed mobile navigation and moved Account into an Account menu. Fixed tab page display after navigation and repaired button/save JavaScript."
+  "notes": "Trackit 4.1.5: fixed a JavaScript startup syntax error that prevented all app button handlers from loading, and moved Find directly above the chat message input to remove the large gap."
 }
