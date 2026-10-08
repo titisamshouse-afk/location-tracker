@@ -207,3 +207,112 @@ html[data-theme="dark"] .ota-safety-family{background:#172033;border-color:#3741
 .parent-create-button{display:block;margin-top:12px;text-align:center;padding:12px 16px;border-radius:12px;text-decoration:none;font-weight:800;border:1px solid currentColor}
 
 .customization-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}.custom-field{display:flex;flex-direction:column;gap:6px;font-weight:700}.custom-field span{font-size:.9rem}.custom-field input,.custom-field textarea,.custom-field select{width:100%;box-sizing:border-box}.custom-field textarea{min-height:72px;resize:vertical}.custom-field input[type=color]{height:48px;padding:4px}.customization-grid .custom-field:last-child{grid-column:1/-1}@media(max-width:600px){.customization-grid{grid-template-columns:1fr}.customization-grid .custom-field:last-child{grid-column:auto}}
+
+
+/* My customization — polished mobile layout */
+#customization-form{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin:12px 0 14px;
+  padding:12px;
+  border:1px solid #dbe3f0;
+  border-radius:16px;
+  background:#f8fbff;
+}
+#customization-form .custom-field{
+  min-width:0;
+  display:grid;
+  gap:6px;
+  padding:10px;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  background:#fff;
+  font-weight:700;
+}
+#customization-form .custom-field span{
+  font-size:12px;
+  line-height:1.25;
+  color:#374151;
+}
+#customization-form .custom-field input,
+#customization-form .custom-field select,
+#customization-form .custom-field textarea{
+  width:100%;
+  min-width:0;
+  min-height:42px;
+  padding:9px 10px;
+  border:1px solid #d1d5db;
+  border-radius:10px;
+  background:#fff;
+  color:#111827;
+  font-size:14px;
+  outline:none;
+}
+#customization-form .custom-field input:focus,
+#customization-form .custom-field select:focus,
+#customization-form .custom-field textarea:focus{
+  border-color:#2563eb;
+  box-shadow:0 0 0 3px #2563eb22;
+}
+#customization-form .custom-field input[type="color"]{
+  height:42px;
+  min-height:42px;
+  padding:3px;
+  cursor:pointer;
+}
+#customization-form .custom-field textarea{
+  min-height:82px;
+  resize:vertical;
+  line-height:1.4;
+}
+#customization-form .custom-field:last-child{
+  grid-column:1/-1;
+}
+#customization-save{
+  text-align:center;
+  background:#2563eb;
+  border-color:#2563eb;
+  color:#fff;
+}
+#customization-message{
+  min-height:20px;
+  margin-top:8px;
+  text-align:center;
+  font-weight:600;
+}
+html[data-theme="dark"] #customization-form{
+  background:#111827;
+  border-color:#374151;
+}
+html[data-theme="dark"] #customization-form .custom-field{
+  background:#172033;
+  border-color:#374151;
+}
+html[data-theme="dark"] #customization-form .custom-field span{
+  color:#e5e7eb;
+}
+html[data-theme="dark"] #customization-form .custom-field input,
+html[data-theme="dark"] #customization-form .custom-field select,
+html[data-theme="dark"] #customization-form .custom-field textarea{
+  background:#111827;
+  color:#f3f4f6;
+  border-color:#4b5563;
+}
+html[data-theme="dark"] #customization-save{
+  background:#2563eb;
+  color:#fff;
+}
+@media(max-width:560px){
+  #customization-form{
+    grid-template-columns:1fr;
+    padding:10px;
+    gap:8px;
+  }
+  #customization-form .custom-field:last-child{
+    grid-column:auto;
+  }
+  #customization-form .custom-field{
+    padding:9px;
+  }
+}
