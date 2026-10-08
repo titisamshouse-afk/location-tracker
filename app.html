@@ -1314,6 +1314,13 @@ async function loadFamilyAccountInfo(){
     const panel=$("family-account-panel"), id=$("my-trackit-id");
     if(!panel)return;
     panel.classList.remove("hidden");
+    username=familyAccountInfo.username||username||localStorage.getItem("lt_user")||"";
+    if(username){
+      localStorage.setItem("lt_user",username);
+      $("account")?.replaceChildren(document.createTextNode("Signed in as "+username));
+      $("account-menu-name")?.replaceChildren(document.createTextNode(username));
+      $("account-menu-sub")?.replaceChildren(document.createTextNode("Signed in as "+username));
+    }
     if(id)id.textContent=familyAccountInfo.trackit_id||"Unavailable";
     const kidBox=$("kid-customization"), parentBtn=$("parent-manage-button");
     if(familyAccountInfo.account_type==="kid"){kidBox?.classList.remove("hidden");parentBtn?.classList.add("hidden");populateKidCustomization();}
@@ -1436,10 +1443,17 @@ function setupAppNavigation() {
   document.querySelectorAll(".bottom-tab").forEach(b=>b.addEventListener("click",e=>{e.preventDefault();switchTab(b.dataset.tab);}));
   document.querySelectorAll("[data-go-tab]").forEach(b=>b.addEventListener("click",e=>{e.preventDefault();b.dataset.goTab==="account"?openAccountMenu():switchTab(b.dataset.goTab);}));
   window.setupAppNavigationSwitchToChat=friendId=>{switchTab("chat");const select=$("app-chat-friend");if(select){select.value=String(friendId);select.dispatchEvent(new Event("change"));}};
-  $("account-menu-close")?.addEventListener("click",closeAccountMenu);
-  $("account-menu-dialog")?.addEventListener("click",e=>{if(e.target===$("account-menu-dialog"))closeAccountMenu();});
-  $("account-menu-settings")?.addEventListener("click",()=>{closeAccountMenu();openSettings();});
-  $("account-menu-logout")?.addEventListener("click",()=>$("out")?.click());
+  window.trackitCloseAccountMenu=closeAccountMenu;
+  window.trackitOpenSettings=()=>{closeAccountMenu();openSettings();};
+  window.trackitLogout=()=>{$("out")?.click();};
+  const accountClose=$("account-menu-close");
+  if(accountClose)accountClose.onclick=e=>{e.preventDefault();e.stopPropagation();closeAccountMenu();};
+  const accountDialog=$("account-menu-dialog");
+  if(accountDialog)accountDialog.onclick=e=>{if(e.target===accountDialog)closeAccountMenu();};
+  const accountSettings=$("account-menu-settings");
+  if(accountSettings)accountSettings.onclick=e=>{e.preventDefault();e.stopPropagation();closeAccountMenu();openSettings();};
+  const accountLogout=$("account-menu-logout");
+  if(accountLogout)accountLogout.onclick=e=>{e.preventDefault();e.stopPropagation();$("out")?.click();};
   // Keep navigation/chat bindings isolated: an optional feature must never prevent Chat from binding.
   try{otaBindFriendTags();}catch(e){console.warn("Friend tags binding failed",e);}
   try{bindFamilyTools();}catch(e){console.warn("Family tools binding failed",e);}
