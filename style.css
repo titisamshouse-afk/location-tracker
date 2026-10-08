@@ -201,3 +201,5 @@ html[data-theme="dark"] .ota-safety-family{background:#172033;border-color:#3741
 .family-subpanel{padding:14px;border:1px solid currentColor;border-radius:14px}
 .family-selected-kid{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px;border:1px solid currentColor}
 @media(max-width:600px){.account-type-grid{grid-template-columns:1fr}.role-buttons{grid-template-columns:1fr}.family-id-card{align-items:flex-start;flex-direction:column}}
+
+.fullscreen-toggle{position:fixed;right:12px;bottom:92px;z-index:1000;font-weight:800}.trackit-fullscreen .fullscreen-toggle{bottom:20px}@media(max-width:600px){.fullscreen-toggle{right:8px;bottom:88px}}
