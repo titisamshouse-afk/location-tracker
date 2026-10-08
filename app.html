@@ -1545,6 +1545,31 @@ init();
 </script>
 
 <script>
+(function(){
+  // Robust delegated handlers for the four large Home action buttons.
+  document.addEventListener("click",function(event){
+    const button=event.target.closest && event.target.closest(".home-action[data-go-tab]");
+    if(!button)return;
+    const tab=button.getAttribute("data-go-tab");
+    if(!tab)return;
+    event.preventDefault(); event.stopPropagation();
+    if(tab==="account"){
+      const menu=document.getElementById("account-menu-dialog");
+      if(menu)menu.classList.remove("hidden");
+      document.querySelectorAll(".bottom-tab").forEach(b=>b.classList.toggle("active",b.dataset.tab==="account"));
+      return;
+    }
+    const ids={location:"tab-location",chat:"tab-chat",sos:"tab-sos"};
+    Object.values(ids).forEach(id=>document.getElementById(id)?.classList.add("hidden"));
+    document.getElementById(ids[tab])?.classList.remove("hidden");
+    document.getElementById("tab-home")?.classList.add("hidden");
+    document.querySelectorAll(".bottom-tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
+    if(tab==="location" && window.map && typeof window.map.invalidateSize==="function")setTimeout(()=>window.map.invalidateSize(),75);
+  },true);
+})();
+</script>
+
+<script>
 (function () {
   function openSettingsFallback() {
     const dialog = document.getElementById("settings-dialog");
